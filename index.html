@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>未来東京語源記憶システム - TOKYO MEMORY PALACE OS</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      margin: 0;
+      padding: 16px 16px 36px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background-color: #f7f7f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      color: #1c1c1e;
+    }
+    .app-header {
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .app-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1c1c1e;
+      letter-spacing: -0.3px;
+      margin: 0 0 4px;
+    }
+    .app-subtitle {
+      font-size: 0.78rem;
+      color: #8e8e93;
+      margin: 0;
+    }
+
+    /* モード切替タブ */
+    .mode-tab-bar {
+      display: flex;
+      background: #e5e5ea;
+      border-radius: 12px;
+      padding: 3px;
+      width: 100%;
+      max-width: 440px;
+      margin-bottom: 14px;
+    }
+    .mode-tab {
+      flex: 1;
+      padding: 10px 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: #636366;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .mode-tab.active {
+      background: #ffffff;
+      color: #007aff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .view-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* メインカード */
+    .card {
+      background: #ffffff;
+      width: 100%;
+      min-height: 220px;
+      padding: 20px 18px;
+      border-radius: 20px;
+      border: 1px solid #e5e5ea;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 14px;
+      transition: all 0.25s ease;
+    }
+    .mission-badge {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #007aff;
+      background: #eef7ff;
+      border: 1px solid #cce5ff;
+      border-radius: 8px;
+      padding: 4px 10px;
+      margin-bottom: 10px;
+    }
+    .mission-text {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1c1c1e;
+      line-height: 1.5;
+      margin-bottom: 8px;
+      word-break: break-word;
+      text-align: left;
+      background: #fff8e6;
+      border-left: 4px solid #ff9500;
+      padding: 10px 12px;
+      border-radius: 8px;
+    }
+    .hint-chip {
+      font-size: 0.84rem;
+      color: #6e6e73;
+      background: #f5f5f7;
+      border-radius: 12px;
+      padding: 6px 12px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      width: 100%;
+      text-align: left;
+    }
+
+    /* 答え・発音ルール表示枠 */
+    .answer-box {
+      display: none;
+      width: 100%;
+      border-top: 1px dashed #d1d1d6;
+      padding-top: 12px;
+      margin-top: 10px;
+      text-align: left;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .answer-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #8e8e93;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .sentence-en {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #007aff;
+      line-height: 1.35;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .guide-speech {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #ff2d55;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    /* プルダウン（アコーディオン）詳細 */
+    .rule-accordion {
+      width: 100%;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px solid #e5e5ea;
+      background: #fafafa;
+      overflow: hidden;
+    }
+    .rule-accordion summary {
+      padding: 9px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #3a3a3c;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      background: #f2f2f7;
+    }
+    .rule-accordion summary::-webkit-details-marker {
+      display: none;
+    }
+    .rule-accordion summary::after {
+      content: "▼";
+      font-size: 0.68rem;
+      color: #8e8e93;
+      transition: transform 0.2s;
+    }
+    .rule-accordion[open] summary::after {
+      transform: rotate(180deg);
+    }
+    .rule-accordion-content {
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #48484a;
+      background: #ffffff;
+      border-top: 1px solid #e5e5ea;
+    }
+    .rule-accordion-content strong {
+      color: #007aff;
+    }
+
+    .pronunciation-point {
+      font-size: 0.82rem;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      line-height: 1.4;
+      color: #166534;
+      margin-top: 10px;
+    }
+    .pronunciation-point strong {
+      color: #15803d;
+      display: inline-block;
+      margin-right: 4px;
+    }
+    .score-feedback {
+      margin-top: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    /* 成績・進捗バー */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      margin-bottom: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #8e8e93;
+      text-transform: uppercase;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .stat-val {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #1c1c1e;
+    }
+    .stat-divider {
+      width: 1px;
+      height: 24px;
+      background: #d1d1d6;
+    }
+
+    /* 操作パネル */
+    .control-panel {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid #e5e5ea;
+    }
+    .row-label {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #3a3a3c;
+    }
+    .pill-select {
+      background: #ebebeb;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      outline: none;
+      color: #1c1c1e;
+      max-width: 65%;
+    }
+
+    .btn-reveal {
+      background: #eef7ff;
+      color: #007aff;
+      border: 1.5px solid #007aff;
+      border-radius: 16px;
+      padding: 13px;
+      font-size: 0.96rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s ease;
+    }
+    .btn-reveal:active { background: #dceeff; }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn-action {
+      background: #ffffff;
+      color: #1c1c1e;
+      border: 1px solid #d1d1d6;
+      border-radius: 16px;
+      padding: 13px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      transition: all 0.15s ease;
+    }
+    .btn-action:active { transform: scale(0.98); background: #f2f2f7; }
+    .btn-action.btn-mic-active {
+      background: #ff3b30;
+      color: #fff;
+      border-color: #ff3b30;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+    }
+
+    .btn-next {
+      background: #007aff;
+      color: #ffffff;
+      border: none;
+      border-radius: 16px;
+      padding: 15px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
+      transition: background 0.15s ease;
+    }
+    .btn-next:active { background: #0060c8; transform: scale(0.99); }
+
+    /* AI Coach 相談室スタイル */
+    .api-key-banner {
+      width: 100%;
+      background: #fff8e6;
+      border: 1.5px solid #f6d365;
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .api-key-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #8c6200;
+    }
+    .api-key-status {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 800;
+      background: #e5e5ea;
+      color: #636366;
+    }
+    .api-key-status.saved {
+      background: #34c759;
+      color: #ffffff;
+    }
+    .api-key-controls {
+      display: flex;
+      gap: 6px;
+    }
+    .api-key-input {
+      flex: 1;
+      border: 1px solid #d1d1d6;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      outline: none;
+      background: #fff;
+    }
+    .api-key-save {
+      background: #007aff;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .ai-chat-card {
+      background: #ffffff;
+      width: 100%;
+      height: 350px;
+      border-radius: 20px;
+      border: 1px solid #e5e5ea;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+    .chat-bubble {
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 0.88rem;
+      line-height: 1.48;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .chat-ai {
+      background: #f2f2f7;
+      color: #1c1c1e;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-user {
+      background: #007aff;
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble-target {
+      font-size: 0.78rem;
+      color: #8e8e93;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .ai-quick-topics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+    .quick-chip {
+      background: #ffffff;
+      border: 1px solid #d1d1d6;
+      border-radius: 14px;
+      padding: 7px 11px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #3a3a3c;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .quick-chip:active { background: #e5e5ea; }
+
+    .ai-input-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    .ai-text-input {
+      flex: 1;
+      border: 1px solid #d1d1d6;
+      border-radius: 22px;
+      padding: 11px 16px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #ffffff;
+    }
+    .ai-btn-mic {
+      background: #34c759;
+      color: #fff;
+      border: none;
+      border-radius: 22px;
+      padding: 11px 16px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ai-btn-mic:active { background: #2da84a; }
+
+    /* 音声変化テーブル */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 6px;
+    }
+    .phonetic-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      background: #fafafa;
+    }
+    .phonetic-table th, .phonetic-table td {
+      border: 1px solid #e5e5ea;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .phonetic-table th {
+      background: #f2f2f7;
+      color: #1c1c1e;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-header">
+    <h1 class="app-title">未来東京語源記憶システム</h1>
+    <p class="app-subtitle">TOKYO MEMORY PALACE OS ── AAAルール＋（語呂合わせ激突版）</p>
+  </div>
+
+  <!-- モード切替タブ -->
+  <div class="mode-tab-bar">
+    <button class="mode-tab active" id="tabPractice" onclick="setAppMode('practice')">
+      <span>🦅</span> 暗記・特訓モード
+    </button>
+    <button class="mode-tab" id="tabAi" onclick="setAppMode('ai')">
+      <span>🤖</span> AI語源・音感相談室
+    </button>
+  </div>
+
+  <!-- ① 暗記・特訓モード画面 -->
+  <div class="view-container" id="practiceView">
+    <div class="card">
+      <span class="mission-badge" id="dispCatBadge">B1: L01 (port)</span>
+      <div class="mission-text" id="dispMission">ミッション読み込み中...</div>
+      <div class="hint-chip" id="dispHint">---</div>
+
+      <div class="answer-box" id="answerBox">
+        <div class="answer-label">Target Word</div>
+        <div class="sentence-en" id="dispEn">---</div>
+        <div class="answer-label" style="margin-top:6px;">Sound Flow（カタカナ発音表記）</div>
+        <div class="guide-speech" id="dispSound">---</div>
+
+        <!-- プルダウン1: 語根分解 -->
+        <details class="rule-accordion">
+          <summary>📘 語根・構造分解（Core Decode）</summary>
+          <div class="rule-accordion-content" id="dispPhonicsRule">
+            ---
+          </div>
+        </details>
+
+        <!-- プルダウン2: AAAルール＋（語呂合わせ激突不条理アクション） -->
+        <details class="rule-accordion">
+          <summary>💥 AAAルール＋（語呂合わせ物・激突アクション）</summary>
+          <div class="rule-accordion-content" id="dispPhoneticsRule">
+            ---
+          </div>
+        </details>
+
+        <!-- プルダウン3: 音声変化の全網羅表 -->
+        <details class="rule-accordion">
+          <summary>⚡ 英語の省略・短縮の法則（音声変化の全網羅表）</summary>
+          <div class="rule-accordion-content">
+            <div class="table-container">
+              <table class="phonetic-table">
+                <tr>
+                  <th>音声変化</th>
+                  <th>物理的メカニズム</th>
+                  <th>具体例</th>
+                </tr>
+                <tr>
+                  <td><strong>① 連結 (Linking)</strong></td>
+                  <td>子音＋母音で境界が消失</td>
+                  <td>check it out ➔ チェッキタウト</td>
+                </tr>
+                <tr>
+                  <td><strong>② 脱落 (Drop)</strong></td>
+                  <td>破裂音(t,d等)が子音前で消音</td>
+                  <td>next door ➔ ネクス・ドア</td>
+                </tr>
+                <tr>
+                  <td><strong>③ フラップT</strong></td>
+                  <td>母音間に挟まれたtがラ行化</td>
+                  <td>water ➔ ウォラー</td>
+                </tr>
+                <tr>
+                  <td><strong>④ ストップ音</strong></td>
+                  <td>破裂音＋子音で息を止める</td>
+                  <td>right now ➔ ライッ・ナウ</td>
+                </tr>
+                <tr>
+                  <td><strong>⑤ 同化</strong></td>
+                  <td>音が混ざり摩擦音(ジュ等)化</td>
+                  <td>Could you ➔ クッジュ</td>
+                </tr>
+                <tr>
+                  <td><strong>⑥ 弱形短縮</strong></td>
+                  <td>機能語が極端に弱く融合</td>
+                  <td>want to ➔ wanna</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <!-- プルダウン4: 結びつきやすい語彙 -->
+        <details class="rule-accordion">
+          <summary>🔗 結びつきやすい語彙（Collocation）解説</summary>
+          <div class="rule-accordion-content" id="dispCollocationRule">
+            ---
+          </div>
+        </details>
+
+        <!-- プルダウン5: 前置詞核心イメージ -->
+        <details class="rule-accordion">
+          <summary>📍 前置詞の核心イメージ解説</summary>
+          <div class="rule-accordion-content" id="dispPrepositionRule">
+            ---
+          </div>
+        </details>
+
+        <!-- プルダウン6: 副詞方向・状態 -->
+        <details class="rule-accordion">
+          <summary>🚀 副詞の方向・状態解説</summary>
+          <div class="rule-accordion-content" id="dispAdverbRule">
+            ---
+          </div>
+        </details>
+
+        <div class="pronunciation-point" id="dispPointBox">
+          <strong>💡 記憶トリガー:</strong>
+          <span id="dispPoint">---</span>
+        </div>
+
+        <div class="score-feedback" id="dispScore"></div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <span>PROGRESS</span>
+        <span class="stat-val" id="dispProgress">1/7</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span>LAST RESULT</span>
+        <span class="stat-val" id="dispResult">Ready</span>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <!-- 地区選定ドロップダウン -->
+      <div class="row">
+        <span class="row-label">地区選択</span>
+        <select class="pill-select" id="districtSelect" onchange="onDistrictChange()">
+          <option value="B1">B1: 東京湾岸 (白鷹 / 物流)</option>
+          <option value="B2">B2: 品川・京浜 (鍛冶竜 / 生産)</option>
+          <option value="B3">B3: 霞ヶ関・丸の内 (黄金獅子 / 統治)</option>
+        </select>
+      </div>
+
+      <!-- Vault施設選定ドロップダウン -->
+      <div class="row">
+        <span class="row-label">Vault 施設選択</span>
+        <select class="pill-select" id="vaultSelect" onchange="onVaultChange()">
+          <!-- JSで動的再生成 -->
+        </select>
+      </div>
+
+      <button class="btn-reveal" id="btnReveal" onclick="toggleAnswer()">👀 答えと暗記術を見る</button>
+
+      <div class="btn-grid">
+        <button class="btn-action" onclick="speakAudio()">🔊 Listen</button>
+        <button class="btn-action" id="btnMicSpeak" onclick="startMicEnglish()">🎙️ Speak</button>
+      </div>
+
+      <button class="btn-next" onclick="nextMission()">次の単語へ（Next Word）➔</button>
+    </div>
+  </div>
+
+  <!-- ② AI語源相談室画面 -->
+  <div class="view-container" id="aiView" style="display: none;">
+    <div class="api-key-banner">
+      <div class="api-key-header">
+        <span>🔑 Google Gemini APIキー設定</span>
+        <span class="api-key-status" id="apiKeyStatus">未設定</span>
+      </div>
+      <div class="api-key-controls">
+        <input type="password" class="api-key-input" id="geminiApiKey" placeholder="AIzaSyから始まるキーを貼り付け">
+        <button class="api-key-save" onclick="saveApiKey()">保存</button>
+      </div>
+    </div>
+
+    <div class="ai-quick-topics">
+      <button class="quick-chip" style="background:#eef7ff; color:#007aff; border-color:#cce5ff;" onclick="askAiGemini('ネイティブキッズの体感ゲーム形式で、音声のリズムや強弱（強勢拍リズム）のクイズを私に出してください！1問ずつ出題して判定してください。')">🎵 キッズ音感・リズムゲームを始める</button>
+      <button class="quick-chip" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;" onclick="askAiGemini('フォニックスのルールを使って、現在の単語の綴りと音の結びつきを体感できるゲーム形式のトレーニングを私にしてください！')">🧩 フォニックス体感パズルへ進む</button>
+      <button class="quick-chip" onclick="askAiGemini('この単語の語源パーツ（接頭辞・語根）の語呂合わせ具現物と守護獣の激突ストーリーを詳しく解説して！')">💥 AAAルール＋ 激突イメージ深掘り</button>
+    </div>
+
+    <div class="ai-chat-card">
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-bubble chat-ai">
+          未来東京語源記憶システムのAIコーチ（Gemini）です！『AAAルール＋』に基づく日本語語呂合わせオブジェクトと守護獣の激突ストーリー、またはフォニックス音感ゲームをいつでも体験できます。
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-input-row">
+      <input type="text" class="ai-text-input" id="aiInputText" placeholder="日本語で質問やゲームの答えを入力..." onkeypress="handleAiEnter(event)">
+      <button class="ai-btn-mic" id="btnMicJa" onclick="startMicJapanese()">🎙️ 話す</button>
+    </div>
+  </div>
+
+  <script>
+    // 暗記地図台帳（TOKYO_MEMORY_MAP_NO_01）＋【AAAルール＋】完全準拠 マスターデータ
+    const masterDistrictData = {
+      "B1": {
+        districtName: "B1: 東京湾岸 (白鷹)",
+        vaults: {
+          "L01": {
+            facilityName: "L01: 巨大コンテナ港門 [port (運ぶ/港)]",
+            words: [
+              {
+                mission: "💥【AAAルール＋激突情景】白鷹の【左翼（鉄扉）】に電撃を放つ巨大な『トランス変圧器』と襲いかかる『トラ（trans-）』が空中落着！白鷹は爪でトラと噛み合い翼を噛み裂かれながらも、正面から突進する『ポルシェ』とぐらぐら煮立つ『ポトフ鍋（port）』を翼で蹴り飛ばし、激しく対岸へ『輸送（transport）』する！",
+                hint: "trans- (トランス/トラ) + port (ポルシェ/ポトフ) ➔ 輸送する",
+                en: "transport",
+                sound: "トランスポート",
+                phonicsRule: "<strong>【語根分解】</strong> trans-（向こう側へ） + port（運ぶ） ＝ 輸送する",
+                phoneticsRule: "<strong>【AAAルール＋ 4大構成】</strong><br>1. 守護獣特定部位：白鷹の【左翼】<br>2. 不条理合体：港門のスライド式鋼鉄扉<br>3. 語呂合わせ具現物：<strong>『トランス変圧器』『トラ（trans-）』</strong> ＆ <strong>『ポルシェ』『ポトフ（port）』</strong><br>4. 動的激突：変圧器の電撃とトラの鋭い爪で左翼を切り裂かれ血を流しながら、突進するポルシェとポトフ鍋ごと蹴り飛ばして対岸へ爆風輸送する！",
+                collocation: "public transport（公共交通） / transport goods（商品を輸送する）",
+                preposition: "trans-：境界や空間を横断して向こう側へ突き抜ける矢印。",
+                adverb: "efficiently transport（効率的に輸送する）",
+                point: "トランス変圧器とトラをポルシェごと吹き飛ばす激突イメージ！"
+              },
+              {
+                mission: "💥【AAAルール＋激突情景】白鷹の【左翼（鉄扉）】から巨大な毒『アブ（-able）』の大群が襲来！白鷹は突進してくる『ポルシェ（port）』を左翼で薙ぎ払い、アブの大群に背中を刺され舞い上げられながらも、ポルシェをがっしり掴んで空中を『持ち運ぶ（portable）』！",
+                hint: "port (ポルシェ) + -able (アブ) ➔ 持ち運びできる",
+                en: "portable",
+                sound: "ポータブル",
+                phonicsRule: "<strong>【語根分解】</strong> port（運ぶ） + -able（〜できる） ＝ 持ち運び可能な",
+                phoneticsRule: "<strong>【AAAルール＋ 4大構成】</strong><br>1. 守護獣特定部位：白鷹の【左翼】<br>2. 不条理合体：スーツケースの伸縮ハンドル<br>3. 語呂合わせ具現物：<strong>『ポルシェ（port）』</strong> ＆ <strong>『アブ（-able）』</strong><br>4. 動的激突：凶暴な巨大アブの大群に刺され舞い上げられる猛痛に耐えながら、ポルシェの取っ手を掴んで空中を強引に持ち運ぶ！",
+                collocation: "portable charger（モバイルバッテリー） / portable device（携帯端末）",
+                preposition: "-able：持ち運びや移動が容易な可動状態を表す。",
+                adverb: "easily portable（簡単に持ち運びできる）",
+                point: "アブの大群に刺されながらポルシェを持ち運ぶ激痛アクション！"
+              },
+              {
+                mission: "💥【AAAルール＋激突情景】海から巨大な人喰い『インコ（im-）』が来襲！白鷹は【左翼（鉄扉）】を自分の胸元へ抱え込み強烈な吸引渦を発生！インコと熱々『ポトフ（port）』の鍋をまとめて港の中へ強烈に叩き込み『輸入（import）』する！",
+                hint: "im- (インコ) + port (ポトフ) ➔ 輸入する",
+                en: "import",
+                sound: "インポート",
+                phonicsRule: "<strong>【語根分解】</strong> im-（中へ） + port（運ぶ） ＝ 輸入する",
+                phoneticsRule: "<strong>【AAAルール＋ 4大構成】</strong><br>1. 守護獣特定部位：白鷹の【左翼】<br>2. 不条理合体：吸入ダクト<br>3. 語呂合わせ具現物：<strong>『インコ（im-）』</strong> ＆ <strong>『ポトフ（port）』</strong><br>4. 動的激突：襲いかかる巨大インコの嘴を左翼で受け止め、熱々ポトフ鍋ごと港の内部へ吸引激突させて輸入する！",
+                collocation: "import raw materials（原材料を輸入する）",
+                preposition: "im- (in-)：外部から内部の領域へ入るベクトル。",
+                adverb: "heavily imported（大量に輸入されている）",
+                point: "巨大人喰いインコとポトフを港の中に叩き込む！"
+              }
+            ]
+          },
+          "L02": { facilityName: "L02: 湾岸跳ね橋 [fer (もたらす/運ぶ)]", words: [{ mission: "💥【AAAルール＋】白鷹の【右翼】に『トランス変圧器（trans-）』が衝突！翼から火花を散らしながら、対岸の『フェリー（fer）』を跳ね橋ごと叩き放って転送（transfer）する！", hint: "trans- (トランス) + fer (フェリー) ➔ 移す", en: "transfer", sound: "トランスファー", phonicsRule: "trans- + fer ＝ 転送する", phoneticsRule: "白鷹の【右翼】× トランス変圧器 ＆ フェリー。", collocation: "transfer money", preposition: "transfer A to B", adverb: "smoothly transferred", point: "乗り換え・転送の核心。" }] },
+          "L03": { facilityName: "L03: 臨海管制指揮塔 [duc (導く)]", words: [{ mission: "💥【AAAルール＋】白鷹の【嘴】に『紺（con-）』色の服を着た巨人が『ダック（duc/アヒル）』を投げつける！白鷹は嘴でダックを噛み砕き指揮（conduct）執る！", hint: "con- (紺) + duct (ダック) ➔ 指揮する", en: "conduct", sound: "コンダクト", phonicsRule: "con- + duct ＝ 遂行する・指揮する", phoneticsRule: "白鷹の【嘴】× 紺色の服 ＆ ダック。", collocation: "conduct an experiment", preposition: "conduct by expert", adverb: "safely conducted", point: "指揮者・導体の語源。" }] },
+          "L04": { facilityName: "L04: 海上射出デッキ [mit (送る/放つ)]", words: [{ mission: "💥【AAAルール＋】白鷹の【鉤爪】に『トランス（trans-）』の雷撃と『ミツバチ（mit）』が大群で突撃！爪でミツバチを押し潰し電波を送信（transmit）する！", hint: "trans- (トランス) + mit (ミツバチ) ➔ 送信する", en: "transmit", sound: "トランスミット", phonicsRule: "trans- + mit ＝ 送信する", phoneticsRule: "白鷹の【鉤爪】× ミツバチ。", collocation: "transmit data", preposition: "transmit via satellite", adverb: "instantly transmitted", point: "トランスミッターの語源。" }] },
+          "L05": { facilityName: "L05: 超電導リニア基地 [mov (動く)]", words: [{ mission: "💥【AAAルール＋】白鷹の【尾羽】に『ブタ（move/ムー）』が激突！尾羽が激しく暴れて『メンマ（-ment）』の雨が降り注ぎ基地全体が運動（movement）を起こす！", hint: "move (ブタ) + -ment (メンマ) ➔ 運動", en: "movement", sound: "ムーヴメント", phonicsRule: "move + -ment ＝ 運動・動向", phoneticsRule: "白鷹の【尾羽】× ブタ ＆ メンマ。", collocation: "political movement", preposition: "movement towards peace", adverb: "slow movement", point: "社会的なうねり。" }] },
+          "L06": { facilityName: "L06: 重連貨物牽引線 [tract (引く)]", words: [{ mission: "💥【AAAルール＋】白鷹の【胸毛】に『アドバルーン（ad-）』と巨大『トラクター（tract）』が空中衝突！胸の羽毛を削られながらトラクターを引き寄せて魅了（attract）する！", hint: "ad- (アドバルーン) + tract (トラクター) ➔ 魅了する", en: "attract", sound: "アトラクト", phonicsRule: "ad- + tract ＝ 魅了する", phoneticsRule: "白鷹の【胸毛】× トラクター。", collocation: "attract attention", preposition: "attract to each other", adverb: "magnetically attracted", point: "アトラクションの語源。" }] },
+          "L07": { facilityName: "L07: 国際旅客桟橋 [ven (来る/着く)]", words: [{ mission: "💥【AAAルール＋】白鷹の【背中】に『プリン（pre-）』と巨大『弁当（vent）』が降ってくる！背中のセンサーで受け止め事故を予防（prevent）する！", hint: "pre- (プリン) + vent (弁当) ➔ 予防する", en: "prevent", sound: "プリヴェント", phonicsRule: "pre- + vent ＝ 予防する", phoneticsRule: "白鷹の【背中】× プリン ＆ 弁当。", collocation: "prevent accidents", preposition: "prevent from happening", adverb: "effectively prevented", point: "事前に防ぐイメージ。" }] },
+          "L08": { facilityName: "L08: 浮体式艦船ドック [nav (船/航行)]", words: [{ mission: "💥【AAAルール＋】白鷹の【翼先】に『生波（nav）』と『イカ（-igate）』が巻き付く！翼を回転させてイカを薙ぎ払い船を航行（navigate）させる！", hint: "nav (生波) + -igate (イカ) ➔ 航行する", en: "navigate", sound: "ナビゲイト", phonicsRule: "nav + -igate ＝ 操縦する", phoneticsRule: "白鷹の【翼先】× イカ。", collocation: "navigate the website", preposition: "navigate through maze", adverb: "safely navigated", point: "カーナビの語源。" }] },
+          "L09": { facilityName: "L09: 首都高速湾岸JCT [via (道/横断)]", words: [{ mission: "💥【AAAルール＋】白鷹の【クレーン】に『出前（de-）』の『ビア樽（via）』が激突爆発！アームがポキリと折れてルートから逸れる（deviate）！", hint: "de- (出前) + via (ビア樽) ➔ 逸脱する", en: "deviate", sound: "ディーヴィエイト", phonicsRule: "de- + via ＝ 脱線する", phoneticsRule: "白鷹の【クレーン】× ビア樽。", collocation: "deviate from plan", preposition: "deviate from norm", adverb: "sharply deviated", point: "道を外れるイメージ。" }] },
+          "L10": { facilityName: "L10: 渡り鳥検疫ゲート [migr (移住/移る)]", words: [{ mission: "💥【AAAルール＋】白鷹の【足元】に『マグロ（migr）』の大群が跳ね飛ぶ！爪でマグロを掴みながら南へ移住（migrate）する！", hint: "migr (マグロ) + -ate ➔ 移住する", en: "migrate", sound: "マイグレイト", phonicsRule: "migr + -ate ＝ 移住する", phoneticsRule: "白鷹の【足元】× マグロ。", collocation: "birds migrate south", preposition: "migrate from country", adverb: "seasonally migrate", point: "渡り鳥の移動。" }] },
+          "L11": { facilityName: "L11: 湾岸出入国関門 [-it- (行く/出発)]", words: [{ mission: "💥【AAAルール＋】白鷹の【右爪】に『エキス（ex-）』を塗った『糸（-it-）』が絡みつく！爪を連打して糸を切り刻み非常口から退出（exit）する！", hint: "ex- (エキス) + -it- (糸) ➔ 退出する", en: "exit", sound: "エグジット", phonicsRule: "ex- + -it- ＝ 非常口・退出する", phoneticsRule: "白鷹の【右爪】× 糸。", collocation: "emergency exit", preposition: "exit through door", adverb: "quickly exited", point: "非常口のEXIT。" }] },
+          "L12": { facilityName: "L12: 海流防波水門 [flux (流れる)]", words: [{ mission: "💥【AAAルール＋】白鷹の【水門】に『フルート（flu-）』を持った『イカ（-id）』が激突！水門が吹き飛び液体（fluid）が噴出する！", hint: "flu (フルート) + -id (イカ) ➔ 液体", en: "fluid", sound: "フルイッド", phonicsRule: "flu + -id ＝ 流体・流動的な", phoneticsRule: "白鷹の【水門】× フルート ＆ イカ。", collocation: "fluid motion", preposition: "fluid in design", adverb: "fluidly moving", point: "ブレーキフルード。" }] }
+        }
+      },
+      "B2": {
+        districtName: "B2: 品川・京浜 (鍛冶竜)",
+        vaults: {
+          "L01": { facilityName: "L01: 製鉄高炉オートメーション [fac (作る)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【頭部】に『まにまに（manu）』の着物を着た巨人が『フック（fac）』で突撃！竜は頭部を高炉に打ち付け火花とともに製造（manufacture）する！", hint: "manu (まにまに) + fac (フック) ➔ 製造する", en: "manufacture", sound: "マニュファクチャ―", phonicsRule: "manu + fac ＝ 製造する", phoneticsRule: "鍛冶竜の【頭部】× フック。", collocation: "manufacture cars", preposition: "manufacture in factory", adverb: "mass manufactured", point: "fac（作る）の核心。" }] },
+          "L02": { facilityName: "L02: 巨大回転旋盤ドーム [vert (回す/変える)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【ハンマー前脚】に『コンブ（con-）』と『ペンバート（vert）』が巻き付く！旋盤でコンブを切断しエネルギーを転換（convert）する！", hint: "con- (コンブ) + vert (ペンバート) ➔ 転換する", en: "convert", sound: "コンヴァート", phonicsRule: "con- + vert ＝ 変換する", phoneticsRule: "鍛冶竜の【ハンマー前脚】× コンブ。", collocation: "convert energy", preposition: "convert A into B", adverb: "easily converted", point: "向きを回すイメージ。" }] },
+          "L03": { facilityName: "L03: 高層メガ構造骨組 [struct (建てる)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【右前脚】に『軽トラック（struct）』が激突！脚でトラックを叩き潰してビルを建設（construct）する！", hint: "con- + struct (トラック) ➔ 建設する", en: "construct", sound: "コンストラクト", phonicsRule: "con- + struct ＝ 組み立てる", phoneticsRule: "鍛冶竜の【右前脚】× トラック。", collocation: "construct a skyscraper", preposition: "construct with steel", adverb: "newly constructed", point: "積み上げて建てる。" }] },
+          "L04": { facilityName: "L04: 高圧破壊試験場 [rupt (破る/壊す)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【背中噴出口】に『銀行（bank）』と『ラッパ（rupt）』が詰まって爆発！隔壁を破って破産（bankrupt）させる！", hint: "bank (銀行) + rupt (ラッパ) ➔ 破産する", en: "bankrupt", sound: "バンクルプト", phonicsRule: "bank + rupt ＝ 破産した", phoneticsRule: "鍛冶竜の【背中】× ラッパ。", collocation: "go bankrupt", preposition: "bankrupt by debt", adverb: "nearly bankrupt", point: "パチンと弾け壊れる。" }] },
+          "L05": { facilityName: "L05: 精密鋳型プレス工場 [form (形作る)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【尾】に『トランス（trans-）』の雷撃と『旗（form）』が絡みつく！尾を叩きつけて形を変身（transform）させる！", hint: "trans- (トランス) + form (旗) ➔ 変形する", en: "transform", sound: "トランスフォーム", phonicsRule: "trans- + form ＝ 変身・変形させる", phoneticsRule: "鍛冶竜の【尾】× 旗。", collocation: "transform society", preposition: "transform into A", adverb: "completely transformed", point: "姿形を変える。" }] },
+          "L06": { facilityName: "L06: 触媒合成リアクター [fect (作用させる)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【胴体】に『アメ（ad-）』と『フック（fect）』が引っかかる！うねる胴体で薬品を混ぜ影響を与える（affect）！", hint: "ad- (アメ) + fect (フック) ➔ 影響を与える", en: "affect", sound: "アフェクト", phonicsRule: "ad- + fect ＝ 影響を及ぼす", phoneticsRule: "鍛冶竜の【胴体】× アメ ＆ フック。", collocation: "affect health", preposition: "affect by climate", adverb: "directly affected", point: "外から作用させる。" }] },
+          "L07": { facilityName: "L07: 多層複合積層ライン [ply (重ねる/折る)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【顎】に『リンゴ（ad-）』と『プリン（ply）』が挟まる！カチカチ噛み砕いて申請を適用（apply）する！", hint: "ad- (アメ) + ply (プリン) ➔ 適用する", en: "apply", sound: "アプライ", phonicsRule: "ad- + ply ＝ 適用する・志願する", phoneticsRule: "鍛冶竜の【顎】× プリン。", collocation: "apply for a job", preposition: "apply to university", adverb: "directly applied", point: "折り重ねて差し出す。" }] },
+          "L08": { facilityName: "L08: 折り紙工学研究所 [plic (畳む/包む)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【角】に『昆布（con-）』と『プリクラ（plic）』が刺さる！角を旋回させて複雑に折り畳む（complicate）！", hint: "con- (コンブ) + plic (プリクラ) ➔ 複雑にする", en: "complicate", sound: "コンプリケイト", phonicsRule: "con- + plic ＝ 複雑にする", phoneticsRule: "鍛冶竜の【角】× プリクラ。", collocation: "complicate matters", preposition: "complicate by rules", adverb: "unnecessarily complicated", point: "幾重にも折り畳む。" }] },
+          "L09": { facilityName: "L09: 重量ブロック配置場 [pos (置く/据える)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【全身】に『プロレスラー（pro-）』が『ポスト（pos）』を投げつける！角で受け止めて案を提案（propose）する！", hint: "pro- (プロ) + pos (ポスト) ➔ 提案する", en: "propose", sound: "プロポーズ", phonicsRule: "pro- + pos ＝ 提案する", phoneticsRule: "鍛冶竜の【全身】× ポスト。", collocation: "propose a plan", preposition: "propose to committee", adverb: "formally proposed", point: "前に差し置く。" }] },
+          "L10": { facilityName: "L10: 資材仮置クレーンヤード [pon (設置する)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【爪先】に『ポン酢（pon）』の瓶が激突破砕！爪でパーツを拾い集めて構成（component）する！", hint: "con- + pon (ポン酢) ➔ 構成要素", en: "component", sound: "コンポーネント", phonicsRule: "con- + pon ＝ 構成要素・部品", phoneticsRule: "鍛冶竜の【爪先】× ポン酢。", collocation: "key component", preposition: "component of machine", adverb: "essential component", point: "共に設置する部品。" }] },
+          "L11": { facilityName: "L11: 産業ロボット組立棟 [fab (製造する)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【翼】に『ファブリーズ（fab）』が吹きかかる！翼を扇いでロボットを製造（fabricate）する！", hint: "fab (ファブリーズ) + -icate ➔ 製造する", en: "fabricate", sound: "ファブリケイト", phonicsRule: "fab + -icate ＝ 製造する・組み立てる", phoneticsRule: "鍛冶竜の【翼】× ファブリーズ。", collocation: "fabricate parts", preposition: "fabricate in workshop", adverb: "precisely fabricated", point: "巧みに組み立てる。" }] },
+          "L12": { facilityName: "L12: 職人精密加工工房 [craft (巧みに作る)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【手元】に『クラッカー（craft）』が弾ける！手元を光らせて熟練職人（craftsman）技を振るう！", hint: "craft (クラッカー) + man ➔ 職人", en: "craftsman", sound: "クラフトマン", phonicsRule: "craft + man ＝ 熟練職人", phoneticsRule: "鍛冶竜の【手元】× クラッカー。", collocation: "skilled craftsman", preposition: "craftsman at work", adverb: "masterfully crafted", point: "高度な手技。" }] }
+        }
+      },
+      "B3": {
+        districtName: "B3: 霞ヶ関・丸の内 (黄金獅子)",
+        vaults: {
+          "L01": { facilityName: "L01: 最高主権議事堂 [arch (支配/首領)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【王冠角】に『モノレール（mono-）』と『アーチ橋（arch）』が突撃！角で叩き割り君主制（monarchy）を確立！", hint: "mono- (モノレール) + arch (アーチ) ➔ 君主制", en: "monarchy", sound: "モナーキー", phonicsRule: "mono- + arch ＝ 君主政治", phoneticsRule: "黄金獅子の【王冠角】× モノレール ＆ アーチ。", collocation: "absolute monarchy", preposition: "under monarchy", adverb: "traditionally monarchical", point: "首領・支配の権威。" }] },
+          "L02": { facilityName: "L02: 中央銀行巨大金庫 [cap (頭/掴む)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【左前脚】に『キャップ（帽子/cap）』を被った盗賊が襲撃！前脚で捉えて捕獲（capture）する！", hint: "cap (キャップ) + -ture ➔ 捕らえる", en: "capture", sound: "キャプチャー", phonicsRule: "cap + -ture ＝ 捕獲する・掴む", phoneticsRule: "黄金獅子の【左前脚】× キャップ帽子。", collocation: "capture market share", preposition: "capture by force", adverb: "successfully captured", point: "頭から掴む。" }] },
+          "L03": { facilityName: "L03: 秩序維持保安司令部 [ten (保つ/握る)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【右前脚】に『メイン（main/麺）』と『天ぷら（ten）』がぶつかる！前脚で掴んで状態を維持（maintain）する！", hint: "main (麺) + ten (天ぷら) ➔ 維持する", en: "maintain", sound: "メインテイン", phonicsRule: "main + ten ＝ 維持する・主張する", phoneticsRule: "黄金獅子の【右前脚】× 麺 ＆ 天ぷら。", collocation: "maintain order", preposition: "maintain for years", adverb: "properly maintained", point: "手で握り保つ。" }] },
+          "L04": { facilityName: "L04: 官僚統治タワー [crat (権力/支配)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【鬣】に『ビル（bureau）』と『クラッカー（crat）』が絡みつく！鬣を揺らして官僚政治（bureaucracy）を走らせる！", hint: "bureau (ビル) + crat (クラッカー) ➔ 官僚機構", en: "bureaucracy", sound: "ビューロクラシー", phonicsRule: "bureau + crat ＝ 官僚政治", phoneticsRule: "黄金獅子の【鬣】× ビル ＆ クラッカー。", collocation: "reduce bureaucracy", preposition: "in bureaucracy", adverb: "heavily bureaucratized", point: "デスク権力。" }] },
+          "L05": { facilityName: "L05: 国法制定評議所 [reg (規則/正す)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【玉座】に『レゴブロック（reg）』が敷き詰められる！波動でブロックを正して規制（regulate）する！", hint: "reg (レゴ) + -ulate ➔ 規制する", en: "regulate", sound: "レギュレイト", phonicsRule: "reg + -ulate ＝ 規制する・調整する", phoneticsRule: "黄金獅子の【玉座】× レゴブロック。", collocation: "regulate traffic", preposition: "regulate by law", adverb: "strictly regulated", point: "まっすぐ規則で正す。" }] },
+          "L06": { facilityName: "L06: 国家標準規格院 [norm (基準/規範)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【胸部】に『のれん（norm）』がかかる！胸のレーザーでのれんを照射し標準（normal）を測る！", hint: "norm (のれん) + -al ➔ 標準の", en: "normal", sound: "ノーマル", phonicsRule: "norm + -al ＝ 標準の・正常な", phoneticsRule: "黄金獅子の【胸部】× のれん。", collocation: "normal condition", preposition: "back to normal", adverb: "perfectly normal", point: "直角定規の基準。" }] },
+          "L07": { facilityName: "L07: 最高裁判審理法廷 [jur (法/誓い)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【尾】に『ジュース（jur）』の缶が衝突！尾で缶を叩き潰して陪審員（jury）の判決を下す！", hint: "jur (ジュース) + -y ➔ 陪審員", en: "jury", sound: "ジューリー", phonicsRule: "jur + -y ＝ 陪審員・審査員団", phoneticsRule: "黄金獅子の【尾】× ジュース缶。", collocation: "trial by jury", preposition: "before the jury", adverb: "unanimously juried", point: "法と誓い。" }] },
+          "L08": { facilityName: "L08: 法令公認アーカイブ [leg (法律/選ぶ)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【角】に『レゴ（leg）』のブロック書架が刺さる！角で巻物を引き出し合法（legal）な判定を下す！", hint: "leg (レゴ) + -al ➔ 合法的な", en: "legal", sound: "リーガル", phonicsRule: "leg + -al ＝ 法律上の・合法的な", phoneticsRule: "黄金獅子の【角】× レゴ書架。", collocation: "legal system", preposition: "under legal advice", adverb: "strictly legal", point: "法律で選ばれた。" }] },
+          "L09": { facilityName: "L09: 元首公邸ドーム [dom (領地/支配)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【全身】に『ドミノ（dom）』の板が降り注ぐ！咆哮でドミノを倒し全域を支配（dominate）する！", hint: "dom (ドミノ) + -inate ➔ 支配する", en: "dominate", sound: "ドミネイト", phonicsRule: "dom + -inate ＝ 支配する・圧倒する", phoneticsRule: "黄金獅子の【全身】× ドミノ。", collocation: "dominate the market", preposition: "dominate over rivals", adverb: "completely dominated", point: "家・領地の主。" }] },
+          "L10": { facilityName: "L10: 行政執行執務室 [man (手/命じる)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【左前脚】に『マンゴー（man）』がぶつかる！前脚でつぶしてマニュアル（manual）操作を実行する！", hint: "man (マンゴー) + -ual ➔ 手動の", en: "manual", sound: "マニュアル", phonicsRule: "man + -ual ＝ 手動の・取扱説明書", phoneticsRule: "黄金獅子の【左前脚】× マンゴー。", collocation: "user manual", preposition: "by manual labor", adverb: "manually operated", point: "手で行う。" }] },
+          "L11": { facilityName: "L11: 非常権限発動室 [potent (力/能力)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【胸部】に『ポテト（potent）』の袋が弾ける！胸の紋章が光り潜在能力（potential）を解き放つ！", hint: "potent (ポテト) + -ial ➔ 潜在能力", en: "potential", sound: "ポテンシャル", phonicsRule: "potent + -ial ＝ 潜在能力・可能性", phoneticsRule: "黄金獅子の【胸部】× ポテト。", collocation: "full potential", preposition: "potential for growth", adverb: "potentially dangerous", point: "強い力・能力。" }] },
+          "L12": { facilityName: "L12: 国家栄誉授章広場 [val (価値/強い)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【右前脚】に『バルーン（val）』が絡みつく！前脚でバルーンを割り価値を評価（evaluate）する！", hint: "e- + val (バルーン) ➔ 評価する", en: "evaluate", sound: "エヴァリュエイト", phonicsRule: "e- + val + -uate ＝ 価値を見極める・評価する", phoneticsRule: "黄金獅子の【右前脚】× バルーン。", collocation: "evaluate performance", preposition: "evaluate based on facts", adverb: "carefully evaluated", point: "強さ・価値を見極める。" }] }
+        }
+      }
+    };
+
+    let currentDistrictKey = "B1";
+    let currentVaultKey = "L01";
+    let currentStep = 0;
+    let currentEn = "";
+    let isAnswerShown = false;
+    let activeItem = null;
+
+    function onDistrictChange() {
+      currentDistrictKey = document.getElementById("districtSelect").value;
+      populateVaultDropdown();
+      currentStep = 0;
+      applyCurrentItem();
+    }
+
+    function populateVaultDropdown() {
+      const vaultSelect = document.getElementById("vaultSelect");
+      vaultSelect.innerHTML = "";
+      const vaultsObj = masterDistrictData[currentDistrictKey].vaults;
+      
+      for (let key in vaultsObj) {
+        let opt = document.createElement("option");
+        opt.value = key;
+        opt.innerText = vaultsObj[key].facilityName;
+        vaultSelect.appendChild(opt);
+      }
+      currentVaultKey = vaultSelect.value;
+    }
+
+    function onVaultChange() {
+      currentVaultKey = document.getElementById("vaultSelect").value;
+      currentStep = 0;
+      applyCurrentItem();
+    }
+
+    function setAppMode(mode) {
+      if (mode === 'practice') {
+        document.getElementById("practiceView").style.display = "flex";
+        document.getElementById("aiView").style.display = "none";
+        document.getElementById("tabPractice").className = "mode-tab active";
+        document.getElementById("tabAi").className = "mode-tab";
+      } else {
+        document.getElementById("practiceView").style.display = "none";
+        document.getElementById("aiView").style.display = "flex";
+        document.getElementById("tabPractice").className = "mode-tab";
+        document.getElementById("tabAi").className = "mode-tab active";
+        checkApiKeyStatus();
+      }
+    }
+
+    function toggleAnswer() {
+      isAnswerShown = !isAnswerShown;
+      document.getElementById("answerBox").style.display = isAnswerShown ? "block" : "none";
+      document.getElementById("btnReveal").innerText = isAnswerShown ? "🙈 答えを隠す" : "👀 答えと暗記術を見る";
+    }
+
+    function nextMission() {
+      const wordsArr = masterDistrictData[currentDistrictKey].vaults[currentVaultKey].words;
+      currentStep = (currentStep + 1) % wordsArr.length;
+      applyCurrentItem();
+      document.getElementById("dispResult").innerText = "Thinking...";
+    }
+
+    function applyCurrentItem() {
+      const vaultObj = masterDistrictData[currentDistrictKey].vaults[currentVaultKey];
+      const item = vaultObj.words[currentStep];
+      activeItem = item;
+      currentEn = item.en;
+
+      const totalWords = vaultObj.words.length;
+      document.getElementById("dispProgress").innerText = (currentStep + 1) + "/" + totalWords;
+      document.getElementById("dispCatBadge").innerText = masterDistrictData[currentDistrictKey].districtName + " | " + vaultObj.facilityName;
+      document.getElementById("dispMission").innerText = item.mission;
+      document.getElementById("dispHint").innerText = item.hint;
+
+      document.getElementById("dispEn").innerText = item.en;
+      document.getElementById("dispSound").innerText = item.sound;
+
+      document.getElementById("dispPhonicsRule").innerHTML = item.phonicsRule;
+      document.getElementById("dispPhoneticsRule").innerHTML = item.phoneticsRule;
+      
+      document.getElementById("dispCollocationRule").innerHTML = `<strong>【結びつきやすい語彙】</strong><br>${item.collocation || "なし"}`;
+      document.getElementById("dispPrepositionRule").innerHTML = `<strong>【前置詞の核心イメージ】</strong><br>${item.preposition || "なし"}`;
+      document.getElementById("dispAdverbRule").innerHTML = `<strong>【副詞の方向・状態】</strong><br>${item.adverb || "なし"}`;
+
+      document.getElementById("dispPoint").innerText = item.point;
+
+      document.querySelectorAll(".rule-accordion").forEach(acc => acc.removeAttribute("open"));
+
+      const scoreEl = document.getElementById("dispScore");
+      scoreEl.style.display = "none";
+
+      isAnswerShown = false;
+      document.getElementById("answerBox").style.display = "none";
+      document.getElementById("btnReveal").innerText = "👀 答えと暗記術を見る";
+    }
+
+    function speakAudio() {
+      if (!currentEn) return;
+      if (!isAnswerShown) toggleAnswer();
+      window.speechSynthesis.cancel();
+      const uttr = new SpeechSynthesisUtterance(currentEn);
+      uttr.lang = 'en-US';
+      uttr.rate = 0.85;
+      window.speechSynthesis.speak(uttr);
+    }
+
+    function startMicEnglish() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("音声認識に対応していません。Safari等の環境でご利用ください。");
+        return;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = 'en-US';
+      rec.interimResults = false;
+
+      const btnMic = document.getElementById("btnMicSpeak");
+      btnMic.classList.add("btn-mic-active");
+      document.getElementById("dispResult").innerText = "Listening...";
+
+      rec.onresult = function(e) {
+        btnMic.classList.remove("btn-mic-active");
+        const spoken = e.results.transcript;
+        if (!isAnswerShown) toggleAnswer();
+
+        const cleanT = currentEn.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+        const cleanS = spoken.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+
+        const scoreEl = document.getElementById("dispScore");
+        scoreEl.style.display = "block";
+
+        if (cleanT === cleanS || cleanT.includes(cleanS) || cleanS.includes(cleanT)) {
+          document.getElementById("dispResult").innerText = "Match!";
+          scoreEl.style.background = "#e6f9ed";
+          scoreEl.style.color = "#15803d";
+          scoreEl.innerHTML = `⭕ PERFECT! 「${spoken}」と認識されました！`;
+        } else {
+          document.getElementById("dispResult").innerText = "Retry";
+          scoreEl.style.background = "#fee2e2";
+          scoreEl.style.color = "#b91c1c";
+          scoreEl.innerHTML = `❌ RETRY: 「${spoken}」と認識されました。`;
+        }
+      };
+
+      rec.onerror = function() {
+        btnMic.classList.remove("btn-mic-active");
+        document.getElementById("dispResult").innerText = "Error";
+      };
+
+      rec.onend = function() {
+        btnMic.classList.remove("btn-mic-active");
+      };
+
+      rec.start();
+    }
+
+    function checkApiKeyStatus() {
+      const savedKey = localStorage.getItem("gemini_api_key");
+      const statusEl = document.getElementById("apiKeyStatus");
+      const inputEl = document.getElementById("geminiApiKey");
+      if (savedKey) {
+        statusEl.innerText = "設定済み (保存中)";
+        statusEl.className = "api-key-status saved";
+        inputEl.value = savedKey;
+      } else {
+        statusEl.innerText = "未設定";
+        statusEl.className = "api-key-status";
+      }
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById("geminiApiKey").value.trim();
+      if (!key) {
+        alert("APIキーを入力してください。");
+        return;
+      }
+      localStorage.setItem("gemini_api_key", key);
+      checkApiKeyStatus();
+      alert("Gemini APIキーを安全に保存しました！");
+    }
+
+    function addChatBubble(text, sender, targetSentence = null) {
+      const chatBox = document.getElementById("chatMessages");
+      const bubble = document.createElement("div");
+      bubble.className = `chat-bubble chat-${sender}`;
+
+      if (targetSentence && sender === 'user') {
+        const targetEl = document.createElement("div");
+        targetEl.className = "chat-bubble-target";
+        targetEl.innerText = `【対象単語】: ${targetSentence}`;
+        bubble.appendChild(targetEl);
+      }
+
+      const textEl = document.createElement("div");
+      textEl.innerText = text;
+      bubble.appendChild(textEl);
+
+      chatBox.appendChild(bubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return textEl;
+    }
+
+    async function askAiGemini(userQuestion) {
+      const apiKey = localStorage.getItem("gemini_api_key") || document.getElementById("geminiApiKey").value.trim();
+      if (!apiKey) {
+        addChatBubble("⚠️ 上の黄色い設定枠に Google Gemini APIキー を入力して「保存」を押してください。", "ai");
+        return;
+      }
+
+      const vaultObj = masterDistrictData[currentDistrictKey].vaults[currentVaultKey];
+      const targetPhrase = currentEn || "英単語";
+
+      addChatBubble(userQuestion, "user", targetPhrase);
+      const loadingEl = addChatBubble("思考中（Geminiとリアルタイム通信中）...", "ai");
+
+      const systemPrompt = `あなたは未来東京語源記憶システムの親切なAIコーチです。生徒は現在、以下の単語を特訓中です。
+【地区・施設】: "${masterDistrictData[currentDistrictKey].districtName} - ${vaultObj.facilityName}"
+【単語】: "${targetPhrase}"
+【暗記情景】: "${activeItem ? activeItem.mission : ''}"
+
+質問に対して『AAAルール＋』に基づく日本語語呂合わせオブジェクトと守護獣の激突ストーリーを絡めて回答してください。`;
+
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: `${systemPrompt}\n\n生徒からの質問: ${userQuestion}` }]
+              }
+            ]
+          })
+        });
+
+        const data = await response.json();
+        if (data.candidates && data.candidates.content.parts.text) {
+          loadingEl.innerText = data.candidates.content.parts.text.trim();
+        } else if (data.error) {
+          loadingEl.innerText = `⚠️ エラー: ${data.error.message || 'APIキーが無効です'}`;
+        } else {
+          loadingEl.innerText = "⚠️ 回答を取得できませんでした。";
+        }
+      } catch (err) {
+        loadingEl.innerText = "⚠️ 通信エラーが発生しました。ネット接続およびAPIキーを確認してください。";
+      }
+    }
+
+    function handleAiEnter(e) {
+      if (e.key === 'Enter') {
+        const input = document.getElementById("aiInputText");
+        const val = input.value.trim();
+        if (!val) return;
+        input.value = "";
+        askAiGemini(val);
+      }
+    }
+
+    function startMicJapanese() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("音声認識に対応していません。");
+        return;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = 'ja-JP';
+      rec.interimResults = false;
+
+      const btn = document.getElementById("btnMicJa");
+      btn.innerText = "聴き取り中...";
+
+      rec.onresult = function(e) {
+        btn.innerText = "🎙️ 話す";
+        const spoken = e.results.transcript;
+        askAiGemini(spoken);
+      };
+
+      rec.onerror = function() { btn.innerText = "🎙️ 話す"; };
+      rec.onend = function() { btn.innerText = "🎙️ 話す"; };
+      rec.start();
+    }
+
+    window.onload = function() {
+      populateVaultDropdown();
+      applyCurrentItem();
+      checkApiKeyStatus();
+    };
+  </script>
+</body>
+</html>
+
+ノートブックに追加
+英会話アプリを表示してくれ、コードで
+
+
+Thoughts
+これまでの対話と暗記地図台帳（01_MEM_未来東京詳細記憶地図_NO_01）および改定された**『AAAルール＋（日本語語呂合わせ動的衝突）』に基づき作成した、単一ファイル構成（HTML/CSS/JS）の英会話・語源学習Webアプリの完全版コード（index.html）**です [00_03_ 未来東京語源記憶システム (AAAルール＋（日本語語呂合わせ動的衝突）) VERSION: 2026.09.V01, 01_MEM_未来東京詳細記憶地図_NO_01（秋葉原・神田界隈）]。
+📱 単一ファイル完全版コード (index.html)
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>未来東京語源記憶システム - TOKYO MEMORY PALACE OS</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      margin: 0;
+      padding: 16px 16px 36px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background-color: #f7f7f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      color: #1c1c1e;
+    }
+    .app-header {
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .app-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1c1c1e;
+      letter-spacing: -0.3px;
+      margin: 0 0 4px;
+    }
+    .app-subtitle {
+      font-size: 0.78rem;
+      color: #8e8e93;
+      margin: 0;
+    }
+
+    /* モード切替タブ */
+    .mode-tab-bar {
+      display: flex;
+      background: #e5e5ea;
+      border-radius: 12px;
+      padding: 3px;
+      width: 100%;
+      max-width: 440px;
+      margin-bottom: 14px;
+    }
+    .mode-tab {
+      flex: 1;
+      padding: 10px 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: #636366;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .mode-tab.active {
+      background: #ffffff;
+      color: #007aff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .view-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* メインカード */
+    .card {
+      background: #ffffff;
+      width: 100%;
+      min-height: 220px;
+      padding: 20px 18px;
+      border-radius: 20px;
+      border: 1px solid #e5e5ea;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 14px;
+      transition: all 0.25s ease;
+    }
+    .mission-badge {
+      display: inline-block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #007aff;
+      background: #eef7ff;
+      border: 1px solid #cce5ff;
+      border-radius: 8px;
+      padding: 4px 10px;
+      margin-bottom: 10px;
+    }
+    .mission-text {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1c1c1e;
+      line-height: 1.5;
+      margin-bottom: 8px;
+      word-break: break-word;
+      text-align: left;
+      background: #fff8e6;
+      border-left: 4px solid #ff9500;
+      padding: 10px 12px;
+      border-radius: 8px;
+    }
+    .hint-chip {
+      font-size: 0.84rem;
+      color: #6e6e73;
+      background: #f5f5f7;
+      border-radius: 12px;
+      padding: 6px 12px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      width: 100%;
+      text-align: left;
+    }
+
+    /* 答え・発音ルール表示枠 */
+    .answer-box {
+      display: none;
+      width: 100%;
+      border-top: 1px dashed #d1d1d6;
+      padding-top: 12px;
+      margin-top: 10px;
+      text-align: left;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .answer-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #8e8e93;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .sentence-en {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #007aff;
+      line-height: 1.35;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .guide-speech {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #ff2d55;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    /* プルダウン（アコーディオン）詳細 */
+    .rule-accordion {
+      width: 100%;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px solid #e5e5ea;
+      background: #fafafa;
+      overflow: hidden;
+    }
+    .rule-accordion summary {
+      padding: 9px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #3a3a3c;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      background: #f2f2f7;
+    }
+    .rule-accordion summary::-webkit-details-marker {
+      display: none;
+    }
+    .rule-accordion summary::after {
+      content: "▼";
+      font-size: 0.68rem;
+      color: #8e8e93;
+      transition: transform 0.2s;
+    }
+    .rule-accordion[open] summary::after {
+      transform: rotate(180deg);
+    }
+    .rule-accordion-content {
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: #48484a;
+      background: #ffffff;
+      border-top: 1px solid #e5e5ea;
+    }
+    .rule-accordion-content strong {
+      color: #007aff;
+    }
+
+    .pronunciation-point {
+      font-size: 0.82rem;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      line-height: 1.4;
+      color: #166534;
+      margin-top: 10px;
+    }
+    .pronunciation-point strong {
+      color: #15803d;
+      display: inline-block;
+      margin-right: 4px;
+    }
+    .score-feedback {
+      margin-top: 8px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    /* 成績・進捗バー */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      width: 100%;
+      margin-bottom: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #8e8e93;
+      text-transform: uppercase;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .stat-val {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #1c1c1e;
+    }
+    .stat-divider {
+      width: 1px;
+      height: 24px;
+      background: #d1d1d6;
+    }
+
+    /* 操作パネル */
+    .control-panel {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid #e5e5ea;
+    }
+    .row-label {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #3a3a3c;
+    }
+    .pill-select {
+      background: #ebebeb;
+      border: none;
+      padding: 7px 12px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      outline: none;
+      color: #1c1c1e;
+      max-width: 65%;
+    }
+
+    .btn-reveal {
+      background: #eef7ff;
+      color: #007aff;
+      border: 1.5px solid #007aff;
+      border-radius: 16px;
+      padding: 13px;
+      font-size: 0.96rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s ease;
+    }
+    .btn-reveal:active { background: #dceeff; }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn-action {
+      background: #ffffff;
+      color: #1c1c1e;
+      border: 1px solid #d1d1d6;
+      border-radius: 16px;
+      padding: 13px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      transition: all 0.15s ease;
+    }
+    .btn-action:active { transform: scale(0.98); background: #f2f2f7; }
+    .btn-action.btn-mic-active {
+      background: #ff3b30;
+      color: #fff;
+      border-color: #ff3b30;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+    }
+
+    .btn-next {
+      background: #007aff;
+      color: #ffffff;
+      border: none;
+      border-radius: 16px;
+      padding: 15px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
+      transition: background 0.15s ease;
+    }
+    .btn-next:active { background: #0060c8; transform: scale(0.99); }
+
+    /* AI Coach 相談室スタイル */
+    .api-key-banner {
+      width: 100%;
+      background: #fff8e6;
+      border: 1.5px solid #f6d365;
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .api-key-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #8c6200;
+    }
+    .api-key-status {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 800;
+      background: #e5e5ea;
+      color: #636366;
+    }
+    .api-key-status.saved {
+      background: #34c759;
+      color: #ffffff;
+    }
+    .api-key-controls {
+      display: flex;
+      gap: 6px;
+    }
+    .api-key-input {
+      flex: 1;
+      border: 1px solid #d1d1d6;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      outline: none;
+      background: #fff;
+    }
+    .api-key-save {
+      background: #007aff;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .ai-chat-card {
+      background: #ffffff;
+      width: 100%;
+      height: 350px;
+      border-radius: 20px;
+      border: 1px solid #e5e5ea;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+    .chat-bubble {
+      max-width: 88%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 0.88rem;
+      line-height: 1.48;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .chat-ai {
+      background: #f2f2f7;
+      color: #1c1c1e;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-user {
+      background: #007aff;
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-bubble-target {
+      font-size: 0.78rem;
+      color: #8e8e93;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .ai-quick-topics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+    .quick-chip {
+      background: #ffffff;
+      border: 1px solid #d1d1d6;
+      border-radius: 14px;
+      padding: 7px 11px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #3a3a3c;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .quick-chip:active { background: #e5e5ea; }
+
+    .ai-input-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    .ai-text-input {
+      flex: 1;
+      border: 1px solid #d1d1d6;
+      border-radius: 22px;
+      padding: 11px 16px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #ffffff;
+    }
+    .ai-btn-mic {
+      background: #34c759;
+      color: #fff;
+      border: none;
+      border-radius: 22px;
+      padding: 11px 16px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ai-btn-mic:active { background: #2da84a; }
+
+    /* 音声変化テーブル */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 6px;
+    }
+    .phonetic-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      background: #fafafa;
+    }
+    .phonetic-table th, .phonetic-table td {
+      border: 1px solid #e5e5ea;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .phonetic-table th {
+      background: #f2f2f7;
+      color: #1c1c1e;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-header">
+    <h1 class="app-title">未来東京語源記憶システム</h1>
+    <p class="app-subtitle">TOKYO MEMORY PALACE OS ── AAAルール＋（語呂合わせ激突版）</p>
+  </div>
+
+  <!-- モード切替タブ -->
+  <div class="mode-tab-bar">
+    <button class="mode-tab active" id="tabPractice" onclick="setAppMode('practice')">
+      <span>🦅</span> 暗記・特訓モード
+    </button>
+    <button class="mode-tab" id="tabAi" onclick="setAppMode('ai')">
+      <span>🤖</span> AI語源・音感相談室
+    </button>
+  </div>
+
+  <!-- ① 暗記・特訓モード画面 -->
+  <div class="view-container" id="practiceView">
+    <div class="card">
+      <span class="mission-badge" id="dispCatBadge">B1: L01 (port)</span>
+      <div class="mission-text" id="dispMission">ミッション読み込み中...</div>
+      <div class="hint-chip" id="dispHint">---</div>
+
+      <div class="answer-box" id="answerBox">
+        <div class="answer-label">Target Word</div>
+        <div class="sentence-en" id="dispEn">---</div>
+        <div class="answer-label" style="margin-top:6px;">Sound Flow（カタカナ発音表記）</div>
+        <div class="guide-speech" id="dispSound">---</div>
+
+        <!-- プルダウン1: 語根分解 -->
+        <details class="rule-accordion">
+          <summary>📘 語根・構造分解（Core Decode）</summary>
+          <div class="rule-accordion-content" id="dispPhonicsRule">
+            ---
+          </div>
+        </details>
+
+        <!-- プルダウン2: AAAルール＋（語呂合わせ物・激突アクション） -->
+        <details class="rule-accordion">
+          <summary>💥 AAAルール＋（語呂合わせ物・激突アクション）</summary>
+          <div class="rule-accordion-content" id="dispPhoneticsRule">
+            ---
+          </div>
+        </details>
+
+        <!-- プルダウン3: 音声変化の全網羅表 -->
+        <details class="rule-accordion">
+          <summary>⚡ 英語の省略・短縮の法則（音声変化の全網羅表）</summary>
+          <div class="rule-accordion-content">
+            <div class="table-container">
+              <table class="phonetic-table">
+                <tr>
+                  <th>音声変化</th>
+                  <th>物理的メカニズム</th>
+                  <th>具体例</th>
+                </tr>
+                <tr>
+                  <td><strong>① 連結 (Linking)</strong></td>
+                  <td>子音＋母音で境界が消失</td>
+                  <td>check it out ➔ チェッキタウト</td>
+                </tr>
+                <tr>
+                  <td><strong>② 脱落 (Drop)</strong></td>
+                  <td>破裂音(t,d等)が子音前で消音</td>
+                  <td>next door ➔ ネクス・ドア</td>
+                </tr>
+                <tr>
+                  <td><strong>③ フラップT</strong></td>
+                  <td>母音間に挟まれたtがラ行化</td>
+                  <td>water ➔ ウォラー</td>
+                </tr>
+                <tr>
+                  <td><strong>④ ストップ音</strong></td>
+                  <td>破裂音＋子音で息を止める</td>
+                  <td>right now ➔ ライッ・ナウ</td>
+                </tr>
+                <tr>
+                  <td><strong>⑤ 同化</strong></td>
+                  <td>音が混ざり摩擦音(ジュ等)化</td>
+                  <td>Could you ➔ クッジュ</td>
+                </tr>
+                <tr>
+                  <td><strong>⑥ 弱形短縮</strong></td>
+                  <td>機能語が極端に弱く融合</td>
+                  <td>want to ➔ wanna</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <!-- プルダウン4: 結びつきやすい語彙 -->
+        <details class="rule-accordion">
+          <summary>🔗 結びつきやすい語彙（Collocation）解説</summary>
+          <div class="rule-accordion-content" id="dispCollocationRule">
+            ---
+          </div>
+        </details>
+
+        <!-- プルダウン5: 前置詞核心イメージ -->
+        <details class="rule-accordion">
+          <summary>📍 前置詞の核心イメージ解説</summary>
+          <div class="rule-accordion-content" id="dispPrepositionRule">
+            ---
+          </div>
+        </details>
+
+        <!-- プルダウン6: 副詞方向・状態 -->
+        <details class="rule-accordion">
+          <summary>🚀 副詞の方向・状態解説</summary>
+          <div class="rule-accordion-content" id="dispAdverbRule">
+            ---
+          </div>
+        </details>
+
+        <div class="pronunciation-point" id="dispPointBox">
+          <strong>💡 記憶トリガー:</strong>
+          <span id="dispPoint">---</span>
+        </div>
+
+        <div class="score-feedback" id="dispScore"></div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <span>PROGRESS</span>
+        <span class="stat-val" id="dispProgress">1/7</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span>LAST RESULT</span>
+        <span class="stat-val" id="dispResult">Ready</span>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <!-- 地区選定ドロップダウン -->
+      <div class="row">
+        <span class="row-label">地区選択</span>
+        <select class="pill-select" id="districtSelect" onchange="onDistrictChange()">
+          <option value="B1">B1: 東京湾岸 (白鷹 / 物流)</option>
+          <option value="B2">B2: 品川・京浜 (鍛冶竜 / 生産)</option>
+          <option value="B3">B3: 霞ヶ関・丸の内 (黄金獅子 / 統治)</option>
+        </select>
+      </div>
+
+      <!-- Vault施設選定ドロップダウン -->
+      <div class="row">
+        <span class="row-label">Vault 施設選択</span>
+        <select class="pill-select" id="vaultSelect" onchange="onVaultChange()">
+          <!-- JSで動的再生成 -->
+        </select>
+      </div>
+
+      <button class="btn-reveal" id="btnReveal" onclick="toggleAnswer()">👀 答えと暗記術を見る</button>
+
+      <div class="btn-grid">
+        <button class="btn-action" onclick="speakAudio()">🔊 Listen</button>
+        <button class="btn-action" id="btnMicSpeak" onclick="startMicEnglish()">🎙️ Speak</button>
+      </div>
+
+      <button class="btn-next" onclick="nextMission()">次の単語へ（Next Word）➔</button>
+    </div>
+  </div>
+
+  <!-- ② AI語源相談室画面 -->
+  <div class="view-container" id="aiView" style="display: none;">
+    <div class="api-key-banner">
+      <div class="api-key-header">
+        <span>🔑 Google Gemini APIキー設定</span>
+        <span class="api-key-status" id="apiKeyStatus">未設定</span>
+      </div>
+      <div class="api-key-controls">
+        <input type="password" class="api-key-input" id="geminiApiKey" placeholder="AIzaSyから始まるキーを貼り付け">
+        <button class="api-key-save" onclick="saveApiKey()">保存</button>
+      </div>
+    </div>
+
+    <div class="ai-quick-topics">
+      <button class="quick-chip" style="background:#eef7ff; color:#007aff; border-color:#cce5ff;" onclick="askAiGemini('ネイティブキッズの体感ゲーム形式で、音声のリズムや強弱（強勢拍リズム）のクイズを私に出してください！1問ずつ出題して判定してください。')">🎵 キッズ音感・リズムゲームを始める</button>
+      <button class="quick-chip" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;" onclick="askAiGemini('フォニックスのルールを使って、現在の単語の綴りと音の結びつきを体感できるゲーム形式のトレーニングを私にしてください！')">🧩 フォニックス体感パズルへ進む</button>
+      <button class="quick-chip" onclick="askAiGemini('この単語の語源パーツ（接頭辞・語根）の語呂合わせ具現物と守護獣の激突ストーリーを詳しく解説して！')">💥 AAAルール＋ 激突イメージ深掘り</button>
+    </div>
+
+    <div class="ai-chat-card">
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-bubble chat-ai">
+          未来東京語源記憶システムのAIコーチ（Gemini）です！『AAAルール＋』に基づく日本語語呂合わせオブジェクトと守護獣の激突ストーリー、またはフォニックス音感ゲームをいつでも体験できます。
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-input-row">
+      <input type="text" class="ai-text-input" id="aiInputText" placeholder="日本語で質問やゲームの答えを入力..." onkeypress="handleAiEnter(event)">
+      <button class="ai-btn-mic" id="btnMicJa" onclick="startMicJapanese()">🎙️ 話す</button>
+    </div>
+  </div>
+
+  <script>
+    // 暗記地図台帳（TOKYO_MEMORY_MAP_NO_01）＋【AAAルール＋】完全準拠 マスターデータ
+    const masterDistrictData = {
+      "B1": {
+        districtName: "B1: 東京湾岸 (白鷹)",
+        vaults: {
+          "L01": {
+            facilityName: "L01: 巨大コンテナ港門 [port (運ぶ/港)]",
+            words: [
+              {
+                mission: "💥【AAAルール＋激突情景】白鷹の【左翼（鉄扉）】に電撃を放つ巨大な『トランス変圧器』と襲いかかる『トラ（trans-）』が空中落着！白鷹は爪でトラと噛み合い翼を噛み裂かれながらも、正面から突進する『ポルシェ』とぐらぐら煮立つ『ポトフ鍋（port）』を翼で蹴り飛ばし、激しく対岸へ『輸送（transport）』する！",
+                hint: "trans- (トランス/トラ) + port (ポルシェ/ポトフ) ➔ 輸送する",
+                en: "transport",
+                sound: "トランスポート",
+                phonicsRule: "<strong>【語根分解】</strong> trans-（向こう側へ） + port（運ぶ） ＝ 輸送する",
+                phoneticsRule: "<strong>【AAAルール＋ 4大構成】</strong><br>1. 守護獣特定部位：白鷹の【左翼】<br>2. 不条理合体：港門のスライド式鋼鉄扉<br>3. 語呂合わせ具現物：<strong>『トランス変圧器』『トラ（trans-）』</strong> ＆ <strong>『ポルシェ』『ポトフ（port）』</strong><br>4. 動的激突：変圧器の電撃とトラの鋭い爪で左翼を切り裂かれ血を流しながら、突進するポルシェとポトフ鍋ごと蹴り飛ばして対岸へ爆風輸送する！",
+                collocation: "public transport（公共交通） / transport goods（商品を輸送する）",
+                preposition: "trans-：境界や空間を横断して向こう側へ突き抜ける矢印。",
+                adverb: "efficiently transport（効率的に輸送する）",
+                point: "トランス変圧器とトラをポルシェごと吹き飛ばす激突イメージ！"
+              },
+              {
+                mission: "💥【AAAルール＋激突情景】白鷹の【左翼（鉄扉）】から巨大な毒『アブ（-able）』の大群が襲来！白鷹は突進してくる『ポルシェ（port）』を左翼で薙ぎ払い、アブの大群に背中を刺され舞い上げられながらも、ポルシェをがっしり掴んで空中を『持ち運ぶ（portable）』！",
+                hint: "port (ポルシェ) + -able (アブ) ➔ 持ち運びできる",
+                en: "portable",
+                sound: "ポータブル",
+                phonicsRule: "<strong>【語根分解】</strong> port（運ぶ） + -able（〜できる） ＝ 持ち運び可能な",
+                phoneticsRule: "<strong>【AAAルール＋ 4大構成】</strong><br>1. 守護獣特定部位：白鷹の【左翼】<br>2. 不条理合体：スーツケースの伸縮ハンドル<br>3. 語呂合わせ具現物：<strong>『ポルシェ（port）』</strong> ＆ <strong>『アブ（-able）』</strong><br>4. 動的激突：凶暴な巨大アブの大群に刺され舞い上げられる猛痛に耐えながら、ポルシェの取っ手を掴んで空中を強引に持ち運ぶ！",
+                collocation: "portable charger（モバイルバッテリー） / portable device（携帯端末）",
+                preposition: "-able：持ち運びや移動が容易な可動状態を表す。",
+                adverb: "easily portable（簡単に持ち運びできる）",
+                point: "アブの大群に刺されながらポルシェを持ち運ぶ激痛アクション！"
+              },
+              {
+                mission: "💥【AAAルール＋激突情景】海から巨大な人喰い『インコ（im-）』が来襲！白鷹は【左翼（鉄扉）】を自分の胸元へ抱え込み強烈な吸引渦を発生！インコと熱々『ポトフ（port）』の鍋をまとめて港の中へ強烈に叩き込み『輸入（import）』する！",
+                hint: "im- (インコ) + port (ポトフ) ➔ 輸入する",
+                en: "import",
+                sound: "インポート",
+                phonicsRule: "<strong>【語根分解】</strong> im-（中へ） + port（運ぶ） ＝ 輸入する",
+                phoneticsRule: "<strong>【AAAルール＋ 4大構成】</strong><br>1. 守護獣特定部位：白鷹の【左翼】<br>2. 不条理合体：吸入ダクト<br>3. 語呂合わせ具現物：<strong>『インコ（im-）』</strong> ＆ <strong>『ポトフ（port）』</strong><br>4. 動的激突：襲いかかる巨大インコの嘴を左翼で受け止め、熱々ポトフ鍋ごと港の内部へ吸引激突させて輸入する！",
+                collocation: "import raw materials（原材料を輸入する）",
+                preposition: "im- (in-)：外部から内部の領域へ入るベクトル。",
+                adverb: "heavily imported（大量に輸入されている）",
+                point: "巨大人喰いインコとポトフを港の中に叩き込む！"
+              }
+            ]
+          },
+          "L02": { facilityName: "L02: 湾岸跳ね橋 [fer (もたらす/運ぶ)]", words: [{ mission: "💥【AAAルール＋】白鷹の【右翼】に『トランス変圧器（trans-）』が衝突！翼から火花を散らしながら、対岸の『フェリー（fer）』を跳ね橋ごと叩き放って転送（transfer）する！", hint: "trans- (トランス) + fer (フェリー) ➔ 移す", en: "transfer", sound: "トランスファー", phonicsRule: "trans- + fer ＝ 転送する", phoneticsRule: "白鷹の【右翼】× トランス変圧器 ＆ フェリー。", collocation: "transfer money", preposition: "transfer A to B", adverb: "smoothly transferred", point: "乗り換え・転送の核心。" }] },
+          "L03": { facilityName: "L03: 臨海管制指揮塔 [duc (導く)]", words: [{ mission: "💥【AAAルール＋】白鷹の【嘴】に『紺（con-）』色の服を着た巨人が『ダック（duc/アヒル）』を投げつける！白鷹は嘴でダックを噛み砕き指揮（conduct）執る！", hint: "con- (紺) + duct (ダック) ➔ 指揮する", en: "conduct", sound: "コンダクト", phonicsRule: "con- + duct ＝ 遂行する・指揮する", phoneticsRule: "白鷹の【嘴】× 紺色の服 ＆ ダック。", collocation: "conduct an experiment", preposition: "conduct by expert", adverb: "safely conducted", point: "指揮者・導体の語源。" }] },
+          "L04": { facilityName: "L04: 海上射出デッキ [mit (送る/放つ)]", words: [{ mission: "💥【AAAルール＋】白鷹の【鉤爪】に『トランス（trans-）』の雷撃と『ミツバチ（mit）』が大群で突撃！爪でミツバチを押し潰し電波を送信（transmit）する！", hint: "trans- (トランス) + mit (ミツバチ) ➔ 送信する", en: "transmit", sound: "トランスミット", phonicsRule: "trans- + mit ＝ 送信する", phoneticsRule: "白鷹の【鉤爪】× ミツバチ。", collocation: "transmit data", preposition: "transmit via satellite", adverb: "instantly transmitted", point: "トランスミッターの語源。" }] },
+          "L05": { facilityName: "L05: 超電導リニア基地 [mov (動く)]", words: [{ mission: "💥【AAAルール＋】白鷹の【尾羽】に『ブタ（move/ムー）』が激突！尾羽が激しく暴れて『メンマ（-ment）』の雨が降り注ぎ基地全体が運動（movement）を起こす！", hint: "move (ブタ) + -ment (メンマ) ➔ 運動", en: "movement", sound: "ムーヴメント", phonicsRule: "move + -ment ＝ 運動・動向", phoneticsRule: "白鷹の【尾羽】× ブタ ＆ メンマ。", collocation: "political movement", preposition: "movement towards peace", adverb: "slow movement", point: "社会的なうねり。" }] },
+          "L06": { facilityName: "L06: 重連貨物牽引線 [tract (引く)]", words: [{ mission: "💥【AAAルール＋】白鷹の【胸毛】に『アドバルーン（ad-）』と巨大『トラクター（tract）』が空中衝突！胸の羽毛を削られながらトラクターを引き寄せて魅了（attract）する！", hint: "ad- (アドバルーン) + tract (トラクター) ➔ 魅了する", en: "attract", sound: "アトラクト", phonicsRule: "ad- + tract ＝ 魅了する", phoneticsRule: "白鷹の【胸毛】× トラクター。", collocation: "attract attention", preposition: "attract to each other", adverb: "magnetically attracted", point: "アトラクションの語源。" }] },
+          "L07": { facilityName: "L07: 国際旅客桟橋 [ven (来る/着く)]", words: [{ mission: "💥【AAAルール＋】白鷹の【背中】に『プリン（pre-）』と巨大『弁当（vent）』が降ってくる！背中のセンサーで受け止め事故を予防（prevent）する！", hint: "pre- (プリン) + vent (弁当) ➔ 予防する", en: "prevent", sound: "プリヴェント", phonicsRule: "pre- + vent ＝ 予防する", phoneticsRule: "白鷹の【背中】× プリン ＆ 弁当。", collocation: "prevent accidents", preposition: "prevent from happening", adverb: "effectively prevented", point: "事前に防ぐイメージ。" }] },
+          "L08": { facilityName: "L08: 浮体式艦船ドック [nav (船/航行)]", words: [{ mission: "💥【AAAルール＋】白鷹の【翼先】に『生波（nav）』と『イカ（-igate）』が巻き付く！翼を回転させてイカを薙ぎ払い船を航行（navigate）させる！", hint: "nav (生波) + -igate (イカ) ➔ 航行する", en: "navigate", sound: "ナビゲイト", phonicsRule: "nav + -igate ＝ 操縦する", phoneticsRule: "白鷹の【翼先】× イカ。", collocation: "navigate the website", preposition: "navigate through maze", adverb: "safely navigated", point: "カーナビの語源。" }] },
+          "L09": { facilityName: "L09: 首都高速湾岸JCT [via (道/横断)]", words: [{ mission: "💥【AAAルール＋】白鷹の【クレーン】に『出前（de-）』の『ビア樽（via）』が激突爆発！アームがポキリと折れてルートから逸れる（deviate）！", hint: "de- (出前) + via (ビア樽) ➔ 逸脱する", en: "deviate", sound: "ディーヴィエイト", phonicsRule: "de- + via ＝ 脱線する", phoneticsRule: "白鷹の【クレーン】× ビア樽。", collocation: "deviate from plan", preposition: "deviate from norm", adverb: "sharply deviated", point: "道を外れるイメージ。" }] },
+          "L10": { facilityName: "L10: 渡り鳥検疫ゲート [migr (移住/移る)]", words: [{ mission: "💥【AAAルール＋】白鷹の【足元】に『マグロ（migr）』の大群が跳ね飛ぶ！爪でマグロを掴みながら南へ移住（migrate）する！", hint: "migr (マグロ) + -ate ➔ 移住する", en: "migrate", sound: "マイグレイト", phonicsRule: "migr + -ate ＝ 移住する", phoneticsRule: "白鷹の【足元】× マグロ。", collocation: "birds migrate south", preposition: "migrate from country", adverb: "seasonally migrate", point: "渡り鳥の移動。" }] },
+          "L11": { facilityName: "L11: 湾岸出入国関門 [-it- (行く/出発)]", words: [{ mission: "💥【AAAルール＋】白鷹の【右爪】に『エキス（ex-）』を塗った『糸（-it-）』が絡みつく！爪を連打して糸を切り刻み非常口から退出（exit）する！", hint: "ex- (エキス) + -it- (糸) ➔ 退出する", en: "exit", sound: "エグジット", phonicsRule: "ex- + -it- ＝ 非常口・退出する", phoneticsRule: "白鷹の【右爪】× 糸。", collocation: "emergency exit", preposition: "exit through door", adverb: "quickly exited", point: "非常口のEXIT。" }] },
+          "L12": { facilityName: "L12: 海流防波水門 [flux (流れる)]", words: [{ mission: "💥【AAAルール＋】白鷹の【水門】に『フルート（flu-）』を持った『イカ（-id）』が激突！水門が吹き飛び液体（fluid）が噴出する！", hint: "flu (フルート) + -id (イカ) ➔ 液体", en: "fluid", sound: "フルイッド", phonicsRule: "flu + -id ＝ 流体・流動的な", phoneticsRule: "白鷹の【水門】× フルート ＆ イカ。", collocation: "fluid motion", preposition: "fluid in design", adverb: "fluidly moving", point: "ブレーキフルード。" }] }
+        }
+      },
+      "B2": {
+        districtName: "B2: 品川・京浜 (鍛冶竜)",
+        vaults: {
+          "L01": { facilityName: "L01: 製鉄高炉オートメーション [fac (作る)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【頭部】に『まにまに（manu）』の着物を着た巨人が『フック（fac）』で突撃！竜は頭部を高炉に打ち付け火花とともに製造（manufacture）する！", hint: "manu (まにまに) + fac (フック) ➔ 製造する", en: "manufacture", sound: "マニュファクチャ―", phonicsRule: "manu + fac ＝ 製造する", phoneticsRule: "鍛冶竜の【頭部】× フック。", collocation: "manufacture cars", preposition: "manufacture in factory", adverb: "mass manufactured", point: "fac（作る）の核心。" }] },
+          "L02": { facilityName: "L02: 巨大回転旋盤ドーム [vert (回す/変える)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【ハンマー前脚】に『コンブ（con-）』と『ペンバート（vert）』が巻き付く！旋盤でコンブを切断しエネルギーを転換（convert）する！", hint: "con- (コンブ) + vert (ペンバート) ➔ 転換する", en: "convert", sound: "コンヴァート", phonicsRule: "con- + vert ＝ 変換する", phoneticsRule: "鍛冶竜の【ハンマー前脚】× コンブ。", collocation: "convert energy", preposition: "convert A into B", adverb: "easily converted", point: "向きを回すイメージ。" }] },
+          "L03": { facilityName: "L03: 高層メガ構造骨組 [struct (建てる)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【右前脚】に『軽トラック（struct）』が激突！脚でトラックを叩き潰してビルを建設（construct）する！", hint: "con- + struct (トラック) ➔ 建設する", en: "construct", sound: "コンストラクト", phonicsRule: "con- + struct ＝ 組み立てる", phoneticsRule: "鍛冶竜の【右前脚】× トラック。", collocation: "construct a skyscraper", preposition: "construct with steel", adverb: "newly constructed", point: "積み上げて建てる。" }] },
+          "L04": { facilityName: "L04: 高圧破壊試験場 [rupt (破る/壊す)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【背中噴出口】に『銀行（bank）』と『ラッパ（rupt）』が詰まって爆発！隔壁を破って破産（bankrupt）させる！", hint: "bank (銀行) + rupt (ラッパ) ➔ 破産する", en: "bankrupt", sound: "バンクルプト", phonicsRule: "bank + rupt ＝ 破産した", phoneticsRule: "鍛冶竜の【背中】× ラッパ。", collocation: "go bankrupt", preposition: "bankrupt by debt", adverb: "nearly bankrupt", point: "パチンと弾け壊れる。" }] },
+          "L05": { facilityName: "L05: 精密鋳型プレス工場 [form (形作る)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【尾】に『トランス（trans-）』の雷撃と『旗（form）』が絡みつく！尾を叩きつけて形を変身（transform）させる！", hint: "trans- (トランス) + form (旗) ➔ 変形する", en: "transform", sound: "トランスフォーム", phonicsRule: "trans- + form ＝ 変身・変形させる", phoneticsRule: "鍛冶竜の【尾】× 旗。", collocation: "transform society", preposition: "transform into A", adverb: "completely transformed", point: "姿形を変える。" }] },
+          "L06": { facilityName: "L06: 触媒合成リアクター [fect (作用させる)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【胴体】に『アメ（ad-）』と『フック（fect）』が引っかかる！うねる胴体で薬品を混ぜ影響を与える（affect）！", hint: "ad- (アメ) + fect (フック) ➔ 影響を与える", en: "affect", sound: "アフェクト", phonicsRule: "ad- + fect ＝ 影響を及ぼす", phoneticsRule: "鍛冶竜の【胴体】× アメ ＆ フック。", collocation: "affect health", preposition: "affect by climate", adverb: "directly affected", point: "外から作用させる。" }] },
+          "L07": { facilityName: "L07: 多層複合積層ライン [ply (重ねる/折る)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【顎】に『リンゴ（ad-）』と『プリン（ply）』が挟まる！カチカチ噛み砕いて申請を適用（apply）する！", hint: "ad- (アメ) + ply (プリン) ➔ 適用する", en: "apply", sound: "アプライ", phonicsRule: "ad- + ply ＝ 適用する・志願する", phoneticsRule: "鍛冶竜の【顎】× プリン。", collocation: "apply for a job", preposition: "apply to university", adverb: "directly applied", point: "折り重ねて差し出す。" }] },
+          "L08": { facilityName: "L08: 折り紙工学研究所 [plic (畳む/包む)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【角】に『昆布（con-）』と『プリクラ（plic）』が刺さる！角を旋回させて複雑に折り畳む（complicate）！", hint: "con- (コンブ) + plic (プリクラ) ➔ 複雑にする", en: "complicate", sound: "コンプリケイト", phonicsRule: "con- + plic ＝ 複雑にする", phoneticsRule: "鍛冶竜の【角】× プリクラ。", collocation: "complicate matters", preposition: "complicate by rules", adverb: "unnecessarily complicated", point: "幾重にも折り畳む。" }] },
+          "L09": { facilityName: "L09: 重量ブロック配置場 [pos (置く/据える)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【全身】に『プロレスラー（pro-）』が『ポスト（pos）』を投げつける！角で受け止めて案を提案（propose）する！", hint: "pro- (プロ) + pos (ポスト) ➔ 提案する", en: "propose", sound: "プロポーズ", phonicsRule: "pro- + pos ＝ 提案する", phoneticsRule: "鍛冶竜の【全身】× ポスト。", collocation: "propose a plan", preposition: "propose to committee", adverb: "formally proposed", point: "前に差し置く。" }] },
+          "L10": { facilityName: "L10: 資材仮置クレーンヤード [pon (設置する)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【爪先】に『ポン酢（pon）』の瓶が激突破砕！爪でパーツを拾い集めて構成（component）する！", hint: "con- + pon (ポン酢) ➔ 構成要素", en: "component", sound: "コンポーネント", phonicsRule: "con- + pon ＝ 構成要素・部品", phoneticsRule: "鍛冶竜の【爪先】× ポン酢。", collocation: "key component", preposition: "component of machine", adverb: "essential component", point: "共に設置する部品。" }] },
+          "L11": { facilityName: "L11: 産業ロボット組立棟 [fab (製造する)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【翼】に『ファブリーズ（fab）』が吹きかかる！翼を扇いでロボットを製造（fabricate）する！", hint: "fab (ファブリーズ) + -icate ➔ 製造する", en: "fabricate", sound: "ファブリケイト", phonicsRule: "fab + -icate ＝ 製造する・組み立てる", phoneticsRule: "鍛冶竜の【翼】× ファブリーズ。", collocation: "fabricate parts", preposition: "fabricate in workshop", adverb: "precisely fabricated", point: "巧みに組み立てる。" }] },
+          "L12": { facilityName: "L12: 職人精密加工工房 [craft (巧みに作る)]", words: [{ mission: "💥【AAAルール＋】鍛冶竜の【手元】に『クラッカー（craft）』が弾ける！手元を光らせて熟練職人（craftsman）技を振るう！", hint: "craft (クラッカー) + man ➔ 職人", en: "craftsman", sound: "クラフトマン", phonicsRule: "craft + man ＝ 熟練職人", phoneticsRule: "鍛冶竜の【手元】× クラッカー。", collocation: "skilled craftsman", preposition: "craftsman at work", adverb: "masterfully crafted", point: "高度な手技。" }] }
+        }
+      },
+      "B3": {
+        districtName: "B3: 霞ヶ関・丸の内 (黄金獅子)",
+        vaults: {
+          "L01": { facilityName: "L01: 最高主権議事堂 [arch (支配/首領)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【王冠角】に『モノレール（mono-）』と『アーチ橋（arch）』が突撃！角で叩き割り君主制（monarchy）を確立！", hint: "mono- (モノレール) + arch (アーチ) ➔ 君主制", en: "monarchy", sound: "モナーキー", phonicsRule: "mono- + arch ＝ 君主政治", phoneticsRule: "黄金獅子の【王冠角】× モノレール ＆ アーチ。", collocation: "absolute monarchy", preposition: "under monarchy", adverb: "traditionally monarchical", point: "首領・支配の権威。" }] },
+          "L02": { facilityName: "L02: 中央銀行巨大金庫 [cap (頭/掴む)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【左前脚】に『キャップ（帽子/cap）』を被った盗賊が襲撃！前脚で捉えて捕獲（capture）する！", hint: "cap (キャップ) + -ture ➔ 捕らえる", en: "capture", sound: "キャプチャー", phonicsRule: "cap + -ture ＝ 捕獲する・掴む", phoneticsRule: "黄金獅子の【左前脚】× キャップ帽子。", collocation: "capture market share", preposition: "capture by force", adverb: "successfully captured", point: "頭から掴む。" }] },
+          "L03": { facilityName: "L03: 秩序維持保安司令部 [ten (保つ/握る)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【右前脚】に『メイン（main/麺）』と『天ぷら（ten）』がぶつかる！前脚で掴んで状態を維持（maintain）する！", hint: "main (麺) + ten (天ぷら) ➔ 維持する", en: "maintain", sound: "メインテイン", phonicsRule: "main + ten ＝ 維持する・主張する", phoneticsRule: "黄金獅子の【右前脚】× 麺 ＆ 天ぷら。", collocation: "maintain order", preposition: "maintain for years", adverb: "properly maintained", point: "手で握り保つ。" }] },
+          "L04": { facilityName: "L04: 官僚統治タワー [crat (権力/支配)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【鬣】に『ビル（bureau）』と『クラッカー（crat）』が絡みつく！鬣を揺らして官僚政治（bureaucracy）を走らせる！", hint: "bureau (ビル) + crat (クラッカー) ➔ 官僚機構", en: "bureaucracy", sound: "ビューロクラシー", phonicsRule: "bureau + crat ＝ 官僚政治", phoneticsRule: "黄金獅子の【鬣】× ビル ＆ クラッカー。", collocation: "reduce bureaucracy", preposition: "in bureaucracy", adverb: "heavily bureaucratized", point: "デスク権力。" }] },
+          "L05": { facilityName: "L05: 国法制定評議所 [reg (規則/正す)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【玉座】に『レゴブロック（reg）』が敷き詰められる！波動でブロックを正して規制（regulate）する！", hint: "reg (レゴ) + -ulate ➔ 規制する", en: "regulate", sound: "レギュレイト", phonicsRule: "reg + -ulate ＝ 規制する・調整する", phoneticsRule: "黄金獅子の【玉座】× レゴブロック。", collocation: "regulate traffic", preposition: "regulate by law", adverb: "strictly regulated", point: "まっすぐ規則で正す。" }] },
+          "L06": { facilityName: "L06: 国家標準規格院 [norm (基準/規範)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【胸部】に『のれん（norm）』がかかる！胸のレーザーでのれんを照射し標準（normal）を測る！", hint: "norm (のれん) + -al ➔ 標準の", en: "normal", sound: "ノーマル", phonicsRule: "norm + -al ＝ 標準の・正常な", phoneticsRule: "黄金獅子の【胸部】× のれん。", collocation: "normal condition", preposition: "back to normal", adverb: "perfectly normal", point: "直角定規の基準。" }] },
+          "L07": { facilityName: "L07: 最高裁判審理法廷 [jur (法/誓い)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【尾】に『ジュース（jur）』の缶が衝突！尾で缶を叩き潰して陪審員（jury）の判決を下す！", hint: "jur (ジュース) + -y ➔ 陪審員", en: "jury", sound: "ジューリー", phonicsRule: "jur + -y ＝ 陪審員・審査員団", phoneticsRule: "黄金獅子の【尾】× ジュース缶。", collocation: "trial by jury", preposition: "before the jury", adverb: "unanimously juried", point: "法と誓い。" }] },
+          "L08": { facilityName: "L08: 法令公認アーカイブ [leg (法律/選ぶ)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【角】に『レゴ（leg）』のブロック書架が刺さる！角で巻物を引き出し合法（legal）な判定を下す！", hint: "leg (レゴ) + -al ➔ 合法的な", en: "legal", sound: "リーガル", phonicsRule: "leg + -al ＝ 法律上の・合法的な", phoneticsRule: "黄金獅子の【角】× レゴ書架。", collocation: "legal system", preposition: "under legal advice", adverb: "strictly legal", point: "法律で選ばれた。" }] },
+          "L09": { facilityName: "L09: 元首公邸ドーム [dom (領地/支配)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【全身】に『ドミノ（dom）』の板が降り注ぐ！咆哮でドミノを倒し全域を支配（dominate）する！", hint: "dom (ドミノ) + -inate ➔ 支配する", en: "dominate", sound: "ドミネイト", phonicsRule: "dom + -inate ＝ 支配する・圧倒する", phoneticsRule: "黄金獅子の【全身】× ドミノ。", collocation: "dominate the market", preposition: "dominate over rivals", adverb: "completely dominated", point: "家・領地の主。" }] },
+          "L10": { facilityName: "L10: 行政執行執務室 [man (手/命じる)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【左前脚】に『マンゴー（man）』がぶつかる！前脚でつぶしてマニュアル（manual）操作を実行する！", hint: "man (マンゴー) + -ual ➔ 手動の", en: "manual", sound: "マニュアル", phonicsRule: "man + -ual ＝ 手動の・取扱説明書", phoneticsRule: "黄金獅子の【左前脚】× マンゴー。", collocation: "user manual", preposition: "by manual labor", adverb: "manually operated", point: "手で行う。" }] },
+          "L11": { facilityName: "L11: 非常権限発動室 [potent (力/能力)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【胸部】に『ポテト（potent）』の袋が弾ける！胸の紋章が光り潜在能力（potential）を解き放つ！", hint: "potent (ポテト) + -ial ➔ 潜在能力", en: "potential", sound: "ポテンシャル", phonicsRule: "potent + -ial ＝ 潜在能力・可能性", phoneticsRule: "黄金獅子の【胸部】× ポテト。", collocation: "full potential", preposition: "potential for growth", adverb: "potentially dangerous", point: "強い力・能力。" }] },
+          "L12": { facilityName: "L12: 国家栄誉授章広場 [val (価値/強い)]", words: [{ mission: "💥【AAAルール＋】黄金獅子の【右前脚】に『バルーン（val）』が絡みつく！前脚でバルーンを割り価値を評価（evaluate）する！", hint: "e- + val (バルーン) ➔ 評価する", en: "evaluate", sound: "エヴァリュエイト", phonicsRule: "e- + val + -uate ＝ 価値を見極める・評価する", phoneticsRule: "黄金獅子の【右前脚】× バルーン。", collocation: "evaluate performance", preposition: "evaluate based on facts", adverb: "carefully evaluated", point: "強さ・価値を見極める。" }] }
+        }
+      }
+    };
+
+    let currentDistrictKey = "B1";
+    let currentVaultKey = "L01";
+    let currentStep = 0;
+    let currentEn = "";
+    let isAnswerShown = false;
+    let activeItem = null;
+
+    function onDistrictChange() {
+      currentDistrictKey = document.getElementById("districtSelect").value;
+      populateVaultDropdown();
+      currentStep = 0;
+      applyCurrentItem();
+    }
+
+    function populateVaultDropdown() {
+      const vaultSelect = document.getElementById("vaultSelect");
+      vaultSelect.innerHTML = "";
+      const vaultsObj = masterDistrictData[currentDistrictKey].vaults;
+      
+      for (let key in vaultsObj) {
+        let opt = document.createElement("option");
+        opt.value = key;
+        opt.innerText = vaultsObj[key].facilityName;
+        vaultSelect.appendChild(opt);
+      }
+      currentVaultKey = vaultSelect.value;
+    }
+
+    function onVaultChange() {
+      currentVaultKey = document.getElementById("vaultSelect").value;
+      currentStep = 0;
+      applyCurrentItem();
+    }
+
+    function setAppMode(mode) {
+      if (mode === 'practice') {
+        document.getElementById("practiceView").style.display = "flex";
+        document.getElementById("aiView").style.display = "none";
+        document.getElementById("tabPractice").className = "mode-tab active";
+        document.getElementById("tabAi").className = "mode-tab";
+      } else {
+        document.getElementById("practiceView").style.display = "none";
+        document.getElementById("aiView").style.display = "flex";
+        document.getElementById("tabPractice").className = "mode-tab";
+        document.getElementById("tabAi").className = "mode-tab active";
+        checkApiKeyStatus();
+      }
+    }
+
+    function toggleAnswer() {
+      isAnswerShown = !isAnswerShown;
+      document.getElementById("answerBox").style.display = isAnswerShown ? "block" : "none";
+      document.getElementById("btnReveal").innerText = isAnswerShown ? "🙈 答えを隠す" : "👀 答えと暗記術を見る";
+    }
+
+    function nextMission() {
+      const wordsArr = masterDistrictData[currentDistrictKey].vaults[currentVaultKey].words;
+      currentStep = (currentStep + 1) % wordsArr.length;
+      applyCurrentItem();
+      document.getElementById("dispResult").innerText = "Thinking...";
+    }
+
+    function applyCurrentItem() {
+      const vaultObj = masterDistrictData[currentDistrictKey].vaults[currentVaultKey];
+      const item = vaultObj.words[currentStep];
+      activeItem = item;
+      currentEn = item.en;
+
+      const totalWords = vaultObj.words.length;
+      document.getElementById("dispProgress").innerText = (currentStep + 1) + "/" + totalWords;
+      document.getElementById("dispCatBadge").innerText = masterDistrictData[currentDistrictKey].districtName + " | " + vaultObj.facilityName;
+      document.getElementById("dispMission").innerText = item.mission;
+      document.getElementById("dispHint").innerText = item.hint;
+
+      document.getElementById("dispEn").innerText = item.en;
+      document.getElementById("dispSound").innerText = item.sound;
+
+      document.getElementById("dispPhonicsRule").innerHTML = item.phonicsRule;
+      document.getElementById("dispPhoneticsRule").innerHTML = item.phoneticsRule;
+      
+      document.getElementById("dispCollocationRule").innerHTML = `<strong>【結びつきやすい語彙】</strong><br>${item.collocation || "なし"}`;
+      document.getElementById("dispPrepositionRule").innerHTML = `<strong>【前置詞の核心イメージ】</strong><br>${item.preposition || "なし"}`;
+      document.getElementById("dispAdverbRule").innerHTML = `<strong>【副詞の方向・状態】</strong><br>${item.adverb || "なし"}`;
+
+      document.getElementById("dispPoint").innerText = item.point;
+
+      document.querySelectorAll(".rule-accordion").forEach(acc => acc.removeAttribute("open"));
+
+      const scoreEl = document.getElementById("dispScore");
+      scoreEl.style.display = "none";
+
+      isAnswerShown = false;
+      document.getElementById("answerBox").style.display = "none";
+      document.getElementById("btnReveal").innerText = "👀 答えと暗記術を見る";
+    }
+
+    function speakAudio() {
+      if (!currentEn) return;
+      if (!isAnswerShown) toggleAnswer();
+      window.speechSynthesis.cancel();
+      const uttr = new SpeechSynthesisUtterance(currentEn);
+      uttr.lang = 'en-US';
+      uttr.rate = 0.85;
+      window.speechSynthesis.speak(uttr);
+    }
+
+    function startMicEnglish() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("音声認識に対応していません。Safari等の環境でご利用ください。");
+        return;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = 'en-US';
+      rec.interimResults = false;
+
+      const btnMic = document.getElementById("btnMicSpeak");
+      btnMic.classList.add("btn-mic-active");
+      document.getElementById("dispResult").innerText = "Listening...";
+
+      rec.onresult = function(e) {
+        btnMic.classList.remove("btn-mic-active");
+        const spoken = e.results.transcript;
+        if (!isAnswerShown) toggleAnswer();
+
+        const cleanT = currentEn.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+        const cleanS = spoken.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+
+        const scoreEl = document.getElementById("dispScore");
+        scoreEl.style.display = "block";
+
+        if (cleanT === cleanS || cleanT.includes(cleanS) || cleanS.includes(cleanT)) {
+          document.getElementById("dispResult").innerText = "Match!";
+          scoreEl.style.background = "#e6f9ed";
+          scoreEl.style.color = "#15803d";
+          scoreEl.innerHTML = `⭕ PERFECT! 「${spoken}」と認識されました！`;
+        } else {
+          document.getElementById("dispResult").innerText = "Retry";
+          scoreEl.style.background = "#fee2e2";
+          scoreEl.style.color = "#b91c1c";
+          scoreEl.innerHTML = `❌ RETRY: 「${spoken}」と認識されました。`;
+        }
+      };
+
+      rec.onerror = function() {
+        btnMic.classList.remove("btn-mic-active");
+        document.getElementById("dispResult").innerText = "Error";
+      };
+
+      rec.onend = function() {
+        btnMic.classList.remove("btn-mic-active");
+      };
+
+      rec.start();
+    }
+
+    function checkApiKeyStatus() {
+      const savedKey = localStorage.getItem("gemini_api_key");
+      const statusEl = document.getElementById("apiKeyStatus");
+      const inputEl = document.getElementById("geminiApiKey");
+      if (savedKey) {
+        statusEl.innerText = "設定済み (保存中)";
+        statusEl.className = "api-key-status saved";
+        inputEl.value = savedKey;
+      } else {
+        statusEl.innerText = "未設定";
+        statusEl.className = "api-key-status";
+      }
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById("geminiApiKey").value.trim();
+      if (!key) {
+        alert("APIキーを入力してください。");
+        return;
+      }
+      localStorage.setItem("gemini_api_key", key);
+      checkApiKeyStatus();
+      alert("Gemini APIキーを安全に保存しました！");
+    }
+
+    function addChatBubble(text, sender, targetSentence = null) {
+      const chatBox = document.getElementById("chatMessages");
+      const bubble = document.createElement("div");
+      bubble.className = `chat-bubble chat-${sender}`;
+
+      if (targetSentence && sender === 'user') {
+        const targetEl = document.createElement("div");
+        targetEl.className = "chat-bubble-target";
+        targetEl.innerText = `【対象単語】: ${targetSentence}`;
+        bubble.appendChild(targetEl);
+      }
+
+      const textEl = document.createElement("div");
+      textEl.innerText = text;
+      bubble.appendChild(textEl);
+
+      chatBox.appendChild(bubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return textEl;
+    }
+
+    async function askAiGemini(userQuestion) {
+      const apiKey = localStorage.getItem("gemini_api_key") || document.getElementById("geminiApiKey").value.trim();
+      if (!apiKey) {
+        addChatBubble("⚠️ 上の黄色い設定枠に Google Gemini APIキー を入力して「保存」を押してください。", "ai");
+        return;
+      }
+
+      const vaultObj = masterDistrictData[currentDistrictKey].vaults[currentVaultKey];
+      const targetPhrase = currentEn || "英単語";
+
+      addChatBubble(userQuestion, "user", targetPhrase);
+      const loadingEl = addChatBubble("思考中（Geminiとリアルタイム通信中）...", "ai");
+
+      const systemPrompt = `あなたは未来東京語源記憶システムの親切なAIコーチです。生徒は現在、以下の単語を特訓中です。
+【地区・施設】: "${masterDistrictData[currentDistrictKey].districtName} - ${vaultObj.facilityName}"
+【単語】: "${targetPhrase}"
+【暗記情景】: "${activeItem ? activeItem.mission : ''}"
+
+質問に対して『AAAルール＋』に基づく日本語語呂合わせオブジェクトと守護獣の激突ストーリーを絡めて回答してください。`;
+
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: `${systemPrompt}\n\n生徒からの質問: ${userQuestion}` }]
+              }
+            ]
+          })
+        });
+
+        const data = await response.json();
+        if (data.candidates && data.candidates.content.parts.text) {
+          loadingEl.innerText = data.candidates.content.parts.text.trim();
+        } else if (data.error) {
+          loadingEl.innerText = `⚠️ エラー: ${data.error.message || 'APIキーが無効です'}`;
+        } else {
+          loadingEl.innerText = "⚠️ 回答を取得できませんでした。";
+        }
+      } catch (err) {
+        loadingEl.innerText = "⚠️ 通信エラーが発生しました。ネット接続およびAPIキーを確認してください。";
+      }
+    }
+
+    function handleAiEnter(e) {
+      if (e.key === 'Enter') {
+        const input = document.getElementById("aiInputText");
+        const val = input.value.trim();
+        if (!val) return;
+        input.value = "";
+        askAiGemini(val);
+      }
+    }
+
+    function startMicJapanese() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("音声認識に対応していません。");
+        return;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = 'ja-JP';
+      rec.interimResults = false;
+
+      const btn = document.getElementById("btnMicJa");
+      btn.innerText = "聴き取り中...";
+
+      rec.onresult = function(e) {
+        btn.innerText = "🎙️ 話す";
+        const spoken = e.results.transcript;
+        askAiGemini(spoken);
+      };
+
+      rec.onerror = function() { btn.innerText = "🎙️ 話す"; };
+      rec.onend = function() { btn.innerText = "🎙️ 話す"; };
+      rec.start();
+    }
+
+    window.onload = function() {
+      populateVaultDropdown();
+      applyCurrentItem();
+      checkApiKeyStatus();
+    };
+  </script>
+</body>
+</html>
+コードをコピーして index.html として上書き保存し、Netlify等のサーバやスマホのブラウザで開いてご利用いただけます。
+特定の地区（B4以降）の追加や、新しい単語の登録についてご希望があればいつでもお声がけください！
+
+ノートブックに追加
+あたらしいコードを保存しなおしたい。どうすればよい？
+
+
+Thoughts
+新しいコードを保存・更新する方法は、**「手元のファイル（Webアプリ）を更新する場合」と「Notebook（ノートブック）のソースとして保存する場合」**の2つがあります。目的に応じて以下の手順で行ってください。
+1. 手元のWebアプリ（index.html）を更新・再保存する場合
+現在 Netlify やスマホ（PWA）で動作させているアプリのコードを更新したい場合は、こちらの手順を行います。
+コードのコピー
+前回の回答に表示されたコードブロックの右上にある「コピー」ボタンを押すか、コード全体を選択してコピーします。
+ローカルファイルの更新
+お使いのパソコンのテキストエディタ（VS Code、メモ帳、テキストエディット等）で、既存の index.html を開きます。
+中身をすべて消去し、コピーした新しいコードを貼り付けて上書き保存します。
+再デプロイ（Webへの反映）
+Netlify の場合: Netlify の管理画面（Sites ➔ 対象アプリの Deploys タブ）を開き、更新した index.html（またはそれが含まれるフォルダ）を再度ドラッグ＆ドロップしてアップロードします。
+GitHub 連携の場合: 保存したファイルをリポジトリにコミット＆プッシュすると自動更新されます。
+2. Gemini Notebook 内の「ソース」として保管したい場合
+この最新コードをノートブックの参考資料として保存しておきたい場合の手順です。
+チャット上の最新コードをコピーします。
+画面左側の 「ソース」パネル を開きます。
+「ソースを追加」 ➔ 「テキストを貼り付け」（または「テキスト」）を選択します。
+ソース名（例: index.html (AAAルール＋最新版)）を入力し、コードを貼り付けて保存します。
+(※システムの安全規定上、AI側からノートブック内のソースやファイルを直接書き換え・削除することはできないため、UI上から保存していただく形となります。)
+💡 保存手順や Netlify へのデプロイ、スマホでの表示確認などでつまづく部分があれば、いつでもサポートしますのでお気軽にお知らせください！
+
+ノートブックに追加
+Githabの詳細を順番に。
+
+
+Thoughts
+GitHubを使ってアプリのコード（index.html）を保管・管理し、自動でWebサイト（またはNetlify）へ連携・公開する手順を順番に分かりやすく解説します。
+🐙 GitHubを使った保存＆公開の完全手順
+ステップ 1: GitHubアカウントの作成
+GitHub公式サイト にアクセスします。
+「Sign up」 をクリックし、メールアドレス・パスワード・ユーザー名を入力してアカウントを作成します。
+ステップ 2: リポジトリ（コード保管庫）の作成
+ログイン後、画面右手上の 「＋」アイコン ➔ 「New repository」 をクリックします。
+以下の項目を設定します：
+Repository name: アプリの名前（例: tokyo-memory-app）を入力します。
+Public / Private:
+Public: 全体に公開（GitHub Pages等で無料で公開しやすい）
+Private: 自分だけが閲覧可能
+Add a README file: チェックを入れておくと便利です。
+一番下の 「Create repository」 をクリックします。
+ステップ 3: index.html ファイルのアップロード
+パソコンのブラウザ操作だけで簡単に保存できます：
+作成したリポジトリ画面で、「Add file」 ➔ 「Upload files」 をクリックします。
+手元で保存した index.html をドラッグ＆ドロップ（またはファイル選択）します。
+画面下部の 「Commit changes」（緑色のボタン）をクリックします。これでコードがGitHub上に永久保存されます。
+ステップ 4: 今後コードを更新（書き換え）するとき
+アプリのコードをアップデートしたい場合も簡単です：
+GitHub上の index.html ファイルをクリックして開きます。
+右上にある 鉛筆アイコン（Edit this file） をクリックします。
+全選択して新しいコードを貼り付け、画面右上の 「Commit changes...」 ➔ 「Commit changes」 を押すと更新完了です。 (※「Upload files」から新しい index.html を上書きアップロードすることでも更新可能です)
+ステップ 5: Webアプリとして自動公開する（2つの方法）
+GitHubに保存したコードは、以下のいずれかの方法で簡単にWebサイト化できます。
+パターンA：GitHub Pagesで公開する（最も簡単・完全無料）
+リポジトリ画面の上部メニュー 「Settings」（設定）を開きます。
+左サイドメニューの 「Pages」 を選択します。
+Build and deployment の Branch を main（または master）に設定し、「Save」 を押します。
+数分待つと、https://<ユーザー名>.github.io/<リポジトリ名>/ というURLが発行され、スマホやPCでアプリとして遊べるようになります！
+パターンB：Netlifyと連携して自動更新（Auto Deploy）
+Netlify にログインし、「Add new site」 ➔ 「Import from an existing project」 を選びます。
+「GitHub」 を選択して連携認証を行います。
+作成したリポジトリ（tokyo-memory-app）を選び 「Deploy」 を押します。
+メリット: 今後はGitHub上のコードを書き換えるだけで、Netlify側のWebアプリも自動的に一瞬で最新版へ更新されます。
